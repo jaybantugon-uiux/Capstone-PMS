@@ -1,11 +1,10 @@
-import './css/App.css';
-import Header from './components/Header.jsx';
-import Body from './components/Body.jsx'; 
+import './App.css';
+import Home from './components/Home.jsx';
 
 function App() {
-  return (
-      <Header />
-  );
+  return <div className="App">
+    <Home />
+  </div>;
 }
 
 export default App;
