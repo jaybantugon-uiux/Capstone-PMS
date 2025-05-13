@@ -50,18 +50,24 @@ function NavBar() {
                 <a href="#home">Contact Us</a>
             </div>
             <div className="navbar-right-container">
-                <input 
-                    className="primary-search-bar"
-                    type="search" 
-                    placeholder="Search" 
-                />
-                <div className="user-icon-container">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input 
+                        className="primary-search-bar"
+                        type="search" 
+                        placeholder="Search" 
+                    />
                     <AccountCircleIcon 
-                        fontSize="small" 
-                        sx={{ color: 'inherit', '&:hover': { color: '#555' } }} 
+                    className='account-icon'
+                    fontSize="medium" 
+                    sx={{ 
+                        color: 'inherit', 
+                        '&:hover': { color: '#555' },
+                        cursor: 'pointer'
+                    }} 
                     />
                 </div>
             </div>
+
             <div className="navbar-menu-container">
                 <HiOutlineBars3 onClick={() => setOpenMenu(true)}/>
             </div>
