@@ -32,8 +32,8 @@ img {
 
 body {
   max-width: 100%;
-  overflow: hidden;
-  background-color: #f6f6f6;
+  overflow-x: hidden;
+  background-color: #ffffff;
 }
 
 nav {
@@ -71,11 +71,63 @@ nav {
   display: none !important;
 }
 
+.primary-card {
+  width: 80%;
+  max-width: 100%;
+  font-family: Inter;
+  margin: 0 auto;
+  border: none;
+  border-radius: 8px;
+}
+
+.primary-card-body {
+  padding: 1rem 0 1rem 0;
+}
+
+img {
+  max-width: var(--logo-width-mobile);
+  height: auto;
+}
+
+.card-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+.card-title {
+  font-family: 'Inter';
+  font-size: 1rem;
+  font-weight: 900;
+  margin-bottom: 0.75rem;
+  color: #8B756A;
+}
+
+.card-text {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+  text-align: justify;
+}
+
+.card-button {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  background-color: #8B756A;
+  border: none;
+}
+
+.card-button:hover {
+  background-color: #6b5e52;
+}
+
 @media (min-width: 768px) {
   .nav-logo-container {
     max-width: var(--logo-width-tablet);
     margin-left: 1.5rem;
-    margin-top: .5rem;
+    margin-top: 0.5rem;
   }
 
   .navbar-menu-container {
@@ -87,8 +139,8 @@ nav {
     justify-content: center;
     align-items: center;
     flex: 1;
-    gap: 2rem; 
-    margin: 0 2rem; 
+    gap: 2rem;
+    margin: 0 2rem;
   }
 
   .navbar-links-container a {
@@ -133,6 +185,51 @@ nav {
   .account-icon:hover {
     color: #555;
   }
+
+  .primary-card {
+    display: flex;
+    gap: 1.5rem;
+    width: 98vw;
+    max-width: 700px;
+    margin: 2rem auto;
+  }
+
+  @media (max-width: 1023.98px) {
+    .primary-card {
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      width: 90vw;
+    }
+
+    .card-img {
+      width: 100%;
+      height: 320px;
+      max-width: 100%;
+      border-radius: 16px 16px 0 0;
+      order: 1;
+    }
+
+    .primary-card-body {
+      width: 100%;
+      padding: 2rem;
+      order: 2;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+    }
+
+    .card-text {
+      font-size: 1.1rem;
+    }
+
+    .card-button {
+      font-size: 1.1rem;
+      padding: 0.9rem;
+      width: 70%;
+    }
+  }
 }
 
 @media (min-width: 1024px) {
@@ -156,7 +253,54 @@ nav {
   .search-icon-container {
     gap: 1rem;
   }
+
   .account-icon {
     margin-right: 1rem;
+  }
+
+  .primary-card {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1.5rem;
+    width: 90%;
+    max-width: 100%;
+    margin-top: 2rem;
+    display: flex;
+  }
+
+  .card-img {
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    order: 2;
+    display: block;
+    align-self: stretch;
+  }
+
+  .primary-card-body {
+    width: 45%;
+    padding: 2rem 1.5rem;
+    order: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .card-text {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .card-button {
+    font-size: 1rem;
+    padding: 0.75rem;
+    width: 60%;
+    align-self: flex-start;
   }
 }
