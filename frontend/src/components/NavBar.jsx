@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
+import {Link} from 'react-router-dom';
 import Logo from "../assets/druLogo.png";
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
@@ -10,7 +12,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { HiOutlineBars3 } from "react-icons/hi2";
 
 function NavBar() {
-    const [openMenu, setOpenMenu] = useState(false)
+    const [openMenu, setOpenMenu] = useState(false);
     const menuOptions = [
         {
             text: "Home",
@@ -43,33 +45,36 @@ function NavBar() {
                 <img src={Logo} alt="Logo" />
             </div>
             <div className="navbar-links-container">
-                <a href="#home">Home</a>
-                <a href="#projects">Projects</a>
-                <a href="#home">Portfolio</a>
-                <a href="#home">Reviews</a>
-                <a href="#home">Contact Us</a>
+                <a href="#home">HOME</a>
+                <a href="#projects">PROJECTS</a>
+                <a href="#portfolio">PORTFOLIO</a>
+                <a href="#reviews">REVIEWS</a>
+                <a href="#contact">CONTACT US</a>
             </div>
             <div className="navbar-right-container">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input 
-                        className="primary-search-bar"
-                        type="search" 
-                        placeholder="Search" 
-                    />
-                    <AccountCircleIcon 
-                    className='account-icon'
-                    fontSize="medium" 
-                    sx={{ 
-                        color: 'inherit', 
-                        '&:hover': { color: '#555' },
-                        cursor: 'pointer'
-                    }} 
-                    />
+                <div className="primary-search-bar">
+                    <input type="text" placeholder="Search..." />
                 </div>
-            </div>
+                <Dropdown>
+                    <Dropdown.Toggle variant="link" id="dropdown-basic" className="account-dropdown">
+                        <AccountCircleIcon 
+                            fontSize="large" 
+                            sx={{ 
+                                color: '#706F6F', 
+                                '&:hover': { color: '#555' },
+                                cursor: 'pointer'
+                            }} 
+                        />
+                    </Dropdown.Toggle>
 
-            <div className="navbar-menu-container">
-                <HiOutlineBars3 onClick={() => setOpenMenu(true)}/>
+                    <Dropdown.Menu>
+                        <Dropdown.Item as={Link} to="/signup">Login</Dropdown.Item>
+                        <Dropdown.Item as={Link} to="/signup">Sign Up</Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+                <div className="navbar-menu-container">
+                    <HiOutlineBars3 className="primary-menu-bar" onClick={() => setOpenMenu(true)}/>
+                </div>
             </div>
 
             <Drawer open={openMenu} onClose={() => setOpenMenu(false)} anchor="right">
