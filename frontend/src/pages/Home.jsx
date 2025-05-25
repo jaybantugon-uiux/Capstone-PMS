@@ -1,6 +1,5 @@
 import React from 'react';
 import NavBar from '../components/NavBar.jsx';
-import HomeCards from '../components/HomeCards.jsx';
 import ImgCarousel from '../components/ImgCarousel.jsx';
 import Footer from '../components/Footer.jsx';
 

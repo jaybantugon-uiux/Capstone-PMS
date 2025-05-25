@@ -11,7 +11,7 @@ import ContactsIcon from '@mui/icons-material/Contacts';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { HiOutlineBars3 } from "react-icons/hi2";
 
-function NavBar() {
+const NavBar = () => {
     const [openMenu, setOpenMenu] = useState(false);
     const menuOptions = [
         {
@@ -34,11 +34,8 @@ function NavBar() {
             text: "Contact Us",
             icon: <ContactsIcon />,
         },
-        {
-            text: "Login/Sign Up",
-            icon: <AccountCircleIcon />,
-        },
     ]
+    
     return (
         <nav>
             <div className="nav-logo-container">
@@ -68,7 +65,7 @@ function NavBar() {
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>
-                        <Dropdown.Item as={Link} to="/signup">Login</Dropdown.Item>
+                        <Dropdown.Item as={Link} to="/login">Login</Dropdown.Item>
                         <Dropdown.Item as={Link} to="/signup">Sign Up</Dropdown.Item>
                     </Dropdown.Menu>
                 </Dropdown>

@@ -239,7 +239,6 @@ nav {
   pointer-events: none;
 }
 
-
 .custom-footer {
   background: #373737;
   color: #fff;
@@ -543,20 +542,27 @@ nav {
 
 .mb-3 {
   font-family: 'Inter';
+
 }
 
-.signup-card .form-control {
+.signup-card .form-control,
+.login-card .form-control,
+.reset-password-card .form-control {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   border: 1px solid #eee;
 }
 
-.signup-card .form-control:focus {
+.signup-card .form-control:focus,
+.login-card .form-control:focus,
+.reset-password-card .form-control:focus{
   border-color: var(--primary-color);
   box-shadow: 0 0 0 0.2rem rgba(112, 111, 111, 0.25);
 }
 
-.signup-card .btn-primary {
+.signup-card .btn-primary,
+.login-card .btn-primary,
+.reset-password-card .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   padding: 0.75rem;
@@ -564,17 +570,22 @@ nav {
   font-weight: 500;
 }
 
-.signup-card .btn-primary:hover {
-  background-color: #a56e8f;
-  border-color: #a56e8f;
+.signup-card .btn-primary:hover,
+.login-card .btn-primary:hover,
+.reset-password-card .btn-primary:hover {
+  background-color: var(--primary-dark);
 }
 
-.signup-card a {
+.signup-card a,
+.login-card a,
+.reset-password-card a {
   color: var(--primary-color);
   text-decoration: none;
 }
 
-.signup-card a:hover {
+.signup-card a:hover,
+.login-card a:hover,
+.reset-password-card a:hover {
   color: var(--primary-dark);
 }
 
@@ -618,6 +629,10 @@ nav {
 
 .back-button-circle:focus {
   box-shadow: none;
+}
+
+.google-direct {
+  margin-top: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -829,4 +844,37 @@ nav {
     margin-top: 1.5rem;
   }
   
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+  margin: 0 1rem;
+}
+
+.divider-text {
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  padding: 0 0.5rem;
+}
+
+.btn-outline-secondary {
+  border-color: var(--border-color);
+  color: var(--primary-color);
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--background-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
