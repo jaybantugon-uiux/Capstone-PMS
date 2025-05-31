@@ -2,16 +2,16 @@
 
 namespace App\Notifications;
 
-use Illuminate\Auth\Notifications\VerifyEmail as VerifyEmailBase;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
 
-class VerifyEmail extends VerifyEmailBase implements ShouldQueue
+class VerifyEmail extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -26,28 +26,32 @@ class VerifyEmail extends VerifyEmailBase implements ShouldQueue
     public $backoff = [60, 120, 300];
 
     /**
-     * Handle a job failure.
+     * Get the notification's delivery channels.
      */
-    public function failed($exception)
+    public function via($notifiable)
     {
-        Log::error('Email verification notification failed', [
-            'exception' => $exception->getMessage(),
-            'trace' => $exception->getTraceAsString()
-        ]);
+        return ['mail'];
     }
 
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail($notifiable): MailMessage
+    public function toMail($notifiable)
     {
         $verificationUrl = $this->verificationUrl($notifiable);
+        
+        Log::info('Sending verification email', [
+            'user_id' => $notifiable->id,
+            'email' => $notifiable->email,
+            'verification_url' => $verificationUrl
+        ]);
 
         return (new MailMessage)
             ->subject('Verify Your Email Address - ' . config('app.name'))
             ->greeting('Hello ' . $notifiable->full_name . '!')
-            ->line('Thank you for registering with ' . config('app.name') . '. Please click the button below to verify your email address.')
-            ->action('Verify Email Address', $verificationUrl)
+            ->line('Thank you for registering with ' . config('app.name') . '!')
+            ->line('Please click the button below to verify your email address.')
+            ->action('Verify Email', $verificationUrl)
             ->line('This verification link will expire in ' . Config::get('auth.verification.expire', 60) . ' minutes.')
             ->line('If you did not create an account, no further action is required.')
             ->salutation('Regards, ' . config('app.name') . ' Team');
@@ -58,13 +62,33 @@ class VerifyEmail extends VerifyEmailBase implements ShouldQueue
      */
     protected function verificationUrl($notifiable): string
     {
-        return URL::temporarySignedRoute(
+        // Get expiration time in minutes, default to 60 minutes
+        $expireMinutes = Config::get('auth.verification.expire', 60);
+        
+        // Generate the full absolute URL with proper domain
+        $url = URL::temporarySignedRoute(
             'verification.verify',
-            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            Carbon::now()->addMinutes($expireMinutes),
             [
                 'id' => $notifiable->getKey(),
                 'hash' => sha1($notifiable->getEmailForVerification()),
-            ]
+            ],
+            true // absolute = true for full URLs
         );
+        
+        // Ensure the URL uses the correct APP_URL from config
+        $appUrl = config('app.url');
+        if ($appUrl && !str_starts_with($url, $appUrl)) {
+            $url = str_replace(url(''), $appUrl, $url);
+        }
+        
+        Log::info('Generated verification URL', [
+            'user_id' => $notifiable->id,
+            'url' => $url,
+            'expires_in_minutes' => $expireMinutes,
+            'app_url' => $appUrl
+        ]);
+        
+        return $url;
     }
 }

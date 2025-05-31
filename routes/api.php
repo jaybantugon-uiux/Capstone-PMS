@@ -18,9 +18,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [ApiAuthController::class, 'resetPassword']);
 });
 
-// Email verification route (signed URL)
+// Email verification route (FIXED - accessible without authentication for verification links)
 Route::get('/email/verify/{id}/{hash}', [ApiAuthController::class, 'verifyEmail'])
-    ->middleware(['signed', 'throttle:6,1'])
+    ->middleware(['signed:relative', 'throttle:6,1'])
     ->name('api.verification.verify');
 
 // Protected API Routes

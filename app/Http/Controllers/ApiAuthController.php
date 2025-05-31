@@ -44,45 +44,64 @@ class ApiAuthController extends Controller
                 'username' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'role' => User::determineRole($request->email),
             ]);
 
-            Log::info('User created successfully via API', ['user_id' => $user->id, 'email' => $user->email]);
-
-            // Send email verification notification
+            // Send verification email to ALL users (not just clients)
             try {
                 $user->sendEmailVerificationNotification();
-                Log::info('Email verification notification sent via API', ['user_id' => $user->id]);
+                Log::info('Email verification notification sent via API', [
+                    'user_id' => $user->id,
+                    'role' => $user->role,
+                    'email' => $user->email
+                ]);
             } catch (Exception $e) {
                 Log::error('Failed to send verification email via API', [
                     'user_id' => $user->id,
+                    'role' => $user->role,
                     'error' => $e->getMessage()
                 ]);
+                // Continue with registration even if email fails
             }
 
-            // Create token for the new user
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'User registered successfully. Please check your email to verify your account.',
-                'user' => [
-                    'id' => $user->id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'email_verified_at' => $user->email_verified_at,
-                    'full_name' => $user->full_name,
-                ],
-                'token' => $token,
-            ], 201);
-
+            // Check if email is already verified (for system roles with auto-verification)
+            if ($user->hasVerifiedEmail()) {
+                $token = $user->createToken('auth_token')->plainTextToken;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User registered successfully',
+                    'user' => [
+                        'id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'username' => $user->username,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'email_verified_at' => $user->email_verified_at,
+                    ],
+                    'token' => $token,
+                ], 201);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User registered successfully. Please verify your email.',
+                    'user' => [
+                        'id' => $user->id,
+                        'first_name' => $user->first_name,
+                        'last_name' => $user->last_name,
+                        'username' => $user->username,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'email_verified_at' => $user->email_verified_at,
+                    ],
+                    'needs_verification' => true,
+                ], 201);
+            }
         } catch (Exception $e) {
             Log::error('User registration failed via API', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Registration failed. Please try again.'
@@ -110,10 +129,17 @@ class ApiAuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
+            
+            // Require email verification for ALL users
+            if (!$user->hasVerifiedEmail()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email not verified. Please verify your email to log in.',
+                    'needs_verification' => true
+                ], 403);
+            }
+            
             $token = $user->createToken('auth_token')->plainTextToken;
-
-            Log::info('User logged in via API', ['user_id' => $user->id]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
@@ -123,18 +149,16 @@ class ApiAuthController extends Controller
                     'last_name' => $user->last_name,
                     'username' => $user->username,
                     'email' => $user->email,
+                    'role' => $user->role,
                     'email_verified_at' => $user->email_verified_at,
-                    'full_name' => $user->full_name,
                 ],
                 'token' => $token,
             ]);
         }
 
-        Log::warning('Failed login attempt via API', ['email' => $request->email]);
-
         return response()->json([
             'success' => false,
-            'message' => 'The provided credentials do not match our records.'
+            'message' => 'Invalid credentials'
         ], 401);
     }
 
@@ -144,7 +168,6 @@ class ApiAuthController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
-        
         return response()->json([
             'success' => true,
             'user' => [
@@ -153,8 +176,8 @@ class ApiAuthController extends Controller
                 'last_name' => $user->last_name,
                 'username' => $user->username,
                 'email' => $user->email,
+                'role' => $user->role,
                 'email_verified_at' => $user->email_verified_at,
-                'full_name' => $user->full_name,
             ]
         ]);
     }
@@ -175,7 +198,10 @@ class ApiAuthController extends Controller
 
         try {
             $user->sendEmailVerificationNotification();
-            Log::info('Verification email resent via API', ['user_id' => $user->id]);
+            Log::info('Verification email resent via API', [
+                'user_id' => $user->id,
+                'role' => $user->role
+            ]);
             
             return response()->json([
                 'success' => true,
@@ -184,6 +210,7 @@ class ApiAuthController extends Controller
         } catch (Exception $e) {
             Log::error('Failed to resend verification email via API', [
                 'user_id' => $user->id,
+                'role' => $user->role,
                 'error' => $e->getMessage()
             ]);
             
@@ -197,7 +224,7 @@ class ApiAuthController extends Controller
     /**
      * Verify email
      */
-    public function verifyEmail(Request $request)
+     public function verifyEmail(Request $request)
     {
         $user = User::find($request->route('id'));
 
@@ -216,20 +243,72 @@ class ApiAuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
+            // Generate token for already verified user
+            $token = $user->createToken('auth_token')->plainTextToken;
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Email already verified.'
+                'message' => 'Email already verified.',
+                'user' => [
+                    'id' => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'email_verified_at' => $user->email_verified_at,
+                ],
+                'token' => $token,
+                'dashboard_url' => $this->getDashboardUrl($user->role)
             ]);
         }
 
         if ($user->markEmailAsVerified()) {
-            Log::info('Email verified successfully via API', ['user_id' => $user->id]);
+            Log::info('Email verified successfully via API', [
+                'user_id' => $user->id,
+                'role' => $user->role
+            ]);
         }
+
+        // Generate token for newly verified user
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'Email verified successfully.'
+            'message' => 'Email verified successfully.',
+            'user' => [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'role' => $user->role,
+                'email_verified_at' => $user->email_verified_at,
+            ],
+            'token' => $token,
+            'dashboard_url' => $this->getDashboardUrl($user->role)
         ]);
+    }
+
+      private function getDashboardUrl($role)
+    {
+        $baseUrl = config('app.url');
+        
+        switch ($role) {
+            case 'admin':
+                return $baseUrl . '/admin-dashboard';
+            case 'emp':
+                return $baseUrl . '/employee-dashboard';
+            case 'finance':
+                return $baseUrl . '/finance-dashboard';
+            case 'pm':
+                return $baseUrl . '/pm-dashboard';
+            case 'sc':
+                return $baseUrl . '/sc-dashboard';
+            case 'client':
+            default:
+                return $baseUrl . '/client-dashboard';
+        }
     }
 
     /**

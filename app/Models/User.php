@@ -2,65 +2,77 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
+use Illuminate\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmail as VerifyEmailNotification; // Import custom notification
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, Notifiable, MustVerifyEmail;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'first_name',
         'last_name',
         'username',
         'email',
         'password',
+        'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
     ];
 
     /**
-     * Get the user's full name.
-     *
-     * @return string
+     * Send the email verification notification using the custom class.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerifyEmailNotification);
+    }
+
+    /**
+     * Get the full name attribute for notifications.
      */
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
     }
 
+    public static function determineRole($email)
+    {
+        $parts = explode('@', $email);
+        if (count($parts) !== 2 || $parts[1] !== 'gmail.com') {
+            return 'client';
+        }
+        $localPart = $parts[0];
+        if (Str::endsWith($localPart, 'admin.dru')) {
+            return 'admin';
+        } elseif (Str::endsWith($localPart, 'emp.dru')) {
+            return 'emp';
+        } elseif (Str::endsWith($localPart, 'finance.dru')) {
+            return 'finance';
+        } elseif (Str::endsWith($localPart, 'pm.dru')) {
+            return 'pm';
+        } elseif (Str::endsWith($localPart, 'sc.dru')) {
+            return 'sc';
+        } else {
+            return 'client';
+        }
+    }
+
     /**
-     * Get the email address that should be used for verification.
-     *
-     * @return string
+     * Route notifications for the mail channel.
      */
-    public function getEmailForVerification()
+    public function routeNotificationForMail($notification)
     {
         return $this->email;
     }
