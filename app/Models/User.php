@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Str;
-use Illuminate\Auth\MustVerifyEmail;
-use App\Notifications\VerifyEmail as VerifyEmailNotification; // Import custom notification
+use Illuminate\Support\Facades\Log;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, Notifiable, MustVerifyEmail;
+    use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'first_name',
         'last_name',
@@ -20,60 +25,150 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'deactivated_at' => 'datetime',
     ];
 
     /**
-     * Send the email verification notification using the custom class.
+     * Determine role based on email domain
      */
-    public function sendEmailVerificationNotification()
+    public static function determineRole($email)
     {
-        $this->notify(new VerifyEmailNotification);
+        // Check for specific role-based emails
+        if (str_contains($email, 'admin.dru@gmail.com') || str_contains($email, 'bantugonjayadmin.dru@gmail.com')) {
+            return 'admin';
+        } elseif (str_contains($email, 'emp.dru@gmail.com') || str_contains($email, 'bantugonjayemp.dru@gmail.com')) {
+            return 'emp';
+        } elseif (str_contains($email, 'finance.dru@gmail.com') || str_contains($email, 'bantugonjayfinance.dru@gmail.com')) {
+            return 'finance';
+        } elseif (str_contains($email, 'pm.dru@gmail.com') || str_contains($email, 'bantugonjaypm.dru@gmail.com')) {
+            return 'pm';
+        } elseif (str_contains($email, 'sc.dru@gmail.com') || str_contains($email, 'bantugonjaysc.dru@gmail.com')) {
+            return 'sc';
+        } else {
+            return 'client'; // Default role
+        }
     }
 
     /**
-     * Get the full name attribute for notifications.
+     * Check if user account is active
+     */
+    public function isActive()
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Check if user account is deactivated
+     */
+    public function isDeactivated()
+    {
+        return $this->status === 'deactivated';
+    }
+
+   /**
+     * Deactivate the user account.
+     *
+     * @return bool
+     */
+    public function deactivate()
+    {
+        try {
+            $this->status = 'deactivated';
+            $this->save();
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to deactivate user', [
+                'user_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Reactivate user account
+     */
+    public function reactivate()
+    {
+        try {
+            $this->status = 'active';
+            $this->deactivated_at = null;
+            $success = $this->save();
+
+            if ($success) {
+                Log::info('User account reactivated', [
+                    'user_id' => $this->id,
+                    'email' => $this->email,
+                    'role' => $this->role
+                ]);
+            }
+
+            return $success;
+        } catch (\Exception $e) {
+            Log::error('Failed to reactivate user account', [
+                'user_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Get the user's full name
      */
     public function getFullNameAttribute()
     {
-        return $this->first_name . ' ' . $this->last_name;
-    }
-
-    public static function determineRole($email)
-    {
-        $parts = explode('@', $email);
-        if (count($parts) !== 2 || $parts[1] !== 'gmail.com') {
-            return 'client';
-        }
-        $localPart = $parts[0];
-        if (Str::endsWith($localPart, 'admin.dru')) {
-            return 'admin';
-        } elseif (Str::endsWith($localPart, 'emp.dru')) {
-            return 'emp';
-        } elseif (Str::endsWith($localPart, 'finance.dru')) {
-            return 'finance';
-        } elseif (Str::endsWith($localPart, 'pm.dru')) {
-            return 'pm';
-        } elseif (Str::endsWith($localPart, 'sc.dru')) {
-            return 'sc';
-        } else {
-            return 'client';
-        }
+        return "{$this->first_name} {$this->last_name}";
     }
 
     /**
-     * Route notifications for the mail channel.
+     * Scope query to only include active users
      */
-    public function routeNotificationForMail($notification)
+    public function scopeActive($query)
     {
-        return $this->email;
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope query to only include deactivated users
+     */
+    public function scopeDeactivated($query)
+    {
+        return $query->where('status', 'deactivated');
+    }
+
+    /**
+     * Boot method to set default values
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->status)) {
+                $user->status = 'active';
+            }
+        });
     }
 }

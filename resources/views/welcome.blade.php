@@ -14,10 +14,10 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Welcome to Laravel Authentication</h4>
+                        <h4>Welcome to Design R Us</h4>
                     </div>
                     <div class="card-body text-center">
-                        <p>Welcome to our Laravel authentication system!</p>
+                        <p>Welcome to Design R Us!</p>
                         
                         @guest
                             <a href="{{ route('login') }}" class="btn btn-primary me-2">Login</a>

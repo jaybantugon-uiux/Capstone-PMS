@@ -22,11 +22,18 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if ($user->role !== $role) {
             // Redirect to their appropriate dashboard
             return $this->redirectToDashboard($user);
+        }
+
+        if ($user->isDeactivated()) {
+            auth()->logout();
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Your account has been deactivated.']);
         }
 
         return $next($request);

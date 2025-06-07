@@ -29,6 +29,10 @@ Route::middleware('guest')->group(function () {
     
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+    
+    // Account reactivation routes (for deactivated accounts)
+    Route::get('/reactivate-account', [AuthController::class, 'showReactivateAccount'])->name('account.reactivate.form');
+    Route::post('/reactivate-account', [AuthController::class, 'reactivateAccount'])->name('account.reactivate');
 });
 
 // Email Verification Routes (accessible without authentication but with signed URLs)
@@ -66,6 +70,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
     
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Account Management Routes
+    Route::get('/account/deactivate', [AuthController::class, 'showDeactivateAccount'])->name('account.deactivate.form');
+    Route::post('/account/deactivate', [AuthController::class, 'deactivateAccount'])->name('account.deactivate');
     
     // Role-specific dashboard routes
     Route::get('/admin-dashboard', function() {

@@ -16,6 +16,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [ApiAuthController::class, 'login']);
     Route::post('/forgot-password', [ApiAuthController::class, 'sendResetLink']);
     Route::post('/reset-password', [ApiAuthController::class, 'resetPassword']);
+    
+    // Account reactivation routes
+    Route::post('/reactivate-account', [ApiAuthController::class, 'reactivateAccount']);
 });
 
 // Email verification route (FIXED - accessible without authentication for verification links)
@@ -29,6 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [ApiAuthController::class, 'profile']);
     Route::post('/logout', [ApiAuthController::class, 'logout']);
     Route::post('/logout-all', [ApiAuthController::class, 'logoutAll']);
+    
+    // Account management routes
+    Route::post('/account/deactivate', [ApiAuthController::class, 'deactivateAccount']);
     
     // Email verification
     Route::post('/email/verification-notification', [ApiAuthController::class, 'sendVerification'])

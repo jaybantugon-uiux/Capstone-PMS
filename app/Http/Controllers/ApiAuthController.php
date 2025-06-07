@@ -45,6 +45,7 @@ class ApiAuthController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => User::determineRole($request->email),
+                'status' => 'active', // Default status
             ]);
 
             // Send verification email to ALL users (not just clients)
@@ -77,6 +78,7 @@ class ApiAuthController extends Controller
                         'username' => $user->username,
                         'email' => $user->email,
                         'role' => $user->role,
+                        'status' => $user->status,
                         'email_verified_at' => $user->email_verified_at,
                     ],
                     'token' => $token,
@@ -92,6 +94,7 @@ class ApiAuthController extends Controller
                         'username' => $user->username,
                         'email' => $user->email,
                         'role' => $user->role,
+                        'status' => $user->status,
                         'email_verified_at' => $user->email_verified_at,
                     ],
                     'needs_verification' => true,
@@ -112,7 +115,7 @@ class ApiAuthController extends Controller
     /**
      * Login user
      */
-    public function login(Request $request)
+   public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -129,6 +132,28 @@ class ApiAuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
+            
+            // Debug: Log the class of the $user object
+            if (!($user instanceof User)) {
+                Log::error('User is not an instance of App\Models\User', [
+                    'user_class' => get_class($user),
+                    'user_data' => is_object($user) ? get_object_vars($user) : $user
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Internal server error: Invalid user instance'
+                ], 500);
+            }
+
+            // Check if account is deactivated
+            if ($user->isDeactivated()) { 
+                Auth::logout();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account has been deactivated. Please contact support or reactivate your account.',
+                    'account_deactivated' => true
+                ], 403);
+            }
             
             // Require email verification for ALL users
             if (!$user->hasVerifiedEmail()) {
@@ -150,6 +175,7 @@ class ApiAuthController extends Controller
                     'username' => $user->username,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'status' => $user->status,
                     'email_verified_at' => $user->email_verified_at,
                 ],
                 'token' => $token,
@@ -177,9 +203,138 @@ class ApiAuthController extends Controller
                 'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role,
+                'status' => $user->status,
                 'email_verified_at' => $user->email_verified_at,
+                'deactivated_at' => $user->deactivated_at,
             ]
         ]);
+    }
+
+    /**
+     * Deactivate user account
+     */
+    public function deactivateAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required',
+            'confirmation' => 'required|in:DEACTIVATE',
+        ], [
+            'confirmation.in' => 'Please provide "DEACTIVATE" to confirm account deactivation.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        // Verify password
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided password is incorrect.',
+                'errors' => [
+                    'password' => ['The provided password is incorrect.']
+                ]
+            ], 422);
+        }
+
+        try {
+            // Deactivate the account
+            $user->deactivate();
+
+            Log::info('User account deactivated via API', [
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email' => $user->email
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your account has been deactivated successfully. All your access tokens have been revoked.'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Account deactivation failed via API', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate account. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reactivate user account
+     */
+    public function reactivateAccount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided credentials are incorrect.',
+                'errors' => [
+                    'email' => ['The provided credentials are incorrect.']
+                ]
+            ], 422);
+        }
+
+        if ($user->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account is already active.',
+                'errors' => [
+                    'email' => ['This account is already active.']
+                ]
+            ], 422);
+        }
+
+        try {
+            // Reactivate the account
+            $user->reactivate();
+
+            Log::info('User account reactivated via API', [
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email' => $user->email
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your account has been reactivated successfully. You can now log in.'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Account reactivation failed via API', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reactivate account. Please try again.'
+            ], 500);
+        }
     }
 
     /**
@@ -256,6 +411,7 @@ class ApiAuthController extends Controller
                     'username' => $user->username,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'status' => $user->status,
                     'email_verified_at' => $user->email_verified_at,
                 ],
                 'token' => $token,
@@ -283,6 +439,7 @@ class ApiAuthController extends Controller
                 'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role,
+                'status' => $user->status,
                 'email_verified_at' => $user->email_verified_at,
             ],
             'token' => $token,
