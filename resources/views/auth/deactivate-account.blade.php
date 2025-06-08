@@ -1,172 +1,81 @@
 @extends('app')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Deactivate Account
-                    </h4>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deactivate Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-red-600">Deactivate Account</h2>
+            <p class="text-gray-600 mt-2">⚠️ This action will deactivate your account. You can reactivate it later if needed.</p>
+        </div>
 
-                <div class="card-body">
-                    <div class="alert alert-warning" role="alert">
-                        <h5 class="alert-heading">
-                            <i class="fas fa-warning me-2"></i>
-                            Warning: This action is serious!
-                        </h5>
-                        <p class="mb-0">Deactivating your account will:</p>
-                        <ul class="mt-2 mb-0">
-                            <li>Log you out of all devices</li>
-                            <li>Revoke all your access tokens</li>
-                            <li>Prevent you from logging in until reactivation</li>
-                            <li>Make your account temporarily inaccessible</li>
-                        </ul>
-                        <hr>
-                        <p class="mb-0">
-                            <strong>Note:</strong> You can reactivate your account later using your email and password.
-                        </p>
-                    </div>
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                @foreach ($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
 
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+            <h3 class="font-semibold text-yellow-800 mb-2">What happens when you deactivate?</h3>
+            <ul class="text-sm text-yellow-700 space-y-1">
+                <li>• Your account will be temporarily disabled</li>
+                <li>• You'll be logged out from all devices</li>
+                <li>• You can reactivate anytime with your credentials</li>
+                <li>• Your data will be preserved</li>
+            </ul>
+        </div>
 
-                    <form method="POST" action="{{ route('account.deactivate') }}" id="deactivateForm">
-                        @csrf
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">
-                                <strong>Confirm Your Password</strong>
-                            </label>
-                            <input 
-                                id="password" 
-                                type="password" 
-                                class="form-control @error('password') is-invalid @enderror" 
-                                name="password" 
-                                required 
-                                autocomplete="current-password"
-                                placeholder="Enter your current password"
-                            >
-                            @error('password')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="confirmation" class="form-label">
-                                <strong>Type "DEACTIVATE" to confirm</strong>
-                            </label>
-                            <input 
-                                id="confirmation" 
-                                type="text" 
-                                class="form-control @error('confirmation') is-invalid @enderror" 
-                                name="confirmation" 
-                                required 
-                                placeholder="Type DEACTIVATE to confirm"
-                                style="text-transform: uppercase;"
-                            >
-                            @error('confirmation')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                            <div class="form-text">
-                                You must type "DEACTIVATE" exactly as shown to confirm this action.
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ route('dashboard') }}" class="btn btn-secondary me-md-2">
-                                <i class="fas fa-arrow-left me-1"></i>
-                                Cancel
-                            </a>
-                            <button 
-                                type="submit" 
-                                class="btn btn-danger"
-                                id="deactivateBtn"
-                                disabled
-                            >
-                                <i class="fas fa-user-times me-1"></i>
-                                Deactivate My Account
-                            </button>
-                        </div>
-                    </form>
-                </div>
+        <form method="POST" action="{{ route('account.deactivate') }}">
+            @csrf
+            
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent @error('password') border-red-500 @enderror"
+                    placeholder="Enter your current password"
+                >
             </div>
 
-            <!-- Account Information Card -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Your Account Information
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Name:</strong> {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</p>
-                            <p><strong>Username:</strong> {{ auth()->user()->username }}</p>
-                            <p><strong>Email:</strong> {{ auth()->user()->email }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Role:</strong> {{ ucfirst(auth()->user()->role) }}</p>
-                            <p><strong>Status:</strong> 
-                                <span class="badge bg-success">{{ ucfirst(auth()->user()->status) }}</span>
-                            </p>
-                            <p><strong>Member Since:</strong> {{ auth()->user()->created_at->format('M d, Y') }}</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="mb-6">
+                <label for="confirmation" class="block text-sm font-medium text-gray-700 mb-2">Type "DEACTIVATE" to confirm</label>
+                <input 
+                    type="text" 
+                    id="confirmation" 
+                    name="confirmation" 
+                    required 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent @error('confirmation') border-red-500 @enderror"
+                    placeholder="Type DEACTIVATE"
+                >
             </div>
+
+            <button 
+                type="submit" 
+                class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-200 font-medium"
+                onclick="return confirm('Are you sure you want to deactivate your account?')"
+            >
+                Deactivate Account
+            </button>
+        </form>
+
+        <div class="text-center mt-6">
+            <a href="{{ route('dashboard') }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                Cancel & Go Back
+            </a>
         </div>
     </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordInput = document.getElementById('password');
-    const confirmationInput = document.getElementById('confirmation');
-    const deactivateBtn = document.getElementById('deactivateBtn');
-    const form = document.getElementById('deactivateForm');
-
-    // Convert input to uppercase
-    confirmationInput.addEventListener('input', function() {
-        this.value = this.value.toUpperCase();
-        checkFormValidity();
-    });
-
-    passwordInput.addEventListener('input', checkFormValidity);
-
-    function checkFormValidity() {
-        const hasPassword = passwordInput.value.length > 0;
-        const hasCorrectConfirmation = confirmationInput.value === 'DEACTIVATE';
-        
-        deactivateBtn.disabled = !(hasPassword && hasCorrectConfirmation);
-    }
-
-    // Double confirmation before submission
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (confirm('Are you absolutely sure you want to deactivate your account? This will log you out immediately.')) {
-            if (confirm('This is your final warning. Click OK to proceed with account deactivation.')) {
-                this.submit();
-            }
-        }
-    });
-});
-</script>
+</body>
+</html>
 @endsection

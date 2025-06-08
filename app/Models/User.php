@@ -1,4 +1,7 @@
 <?php
+// ====================================
+// 1. User Model (app/Models/User.php)
+// ====================================
 
 namespace App\Models;
 
@@ -8,16 +11,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'first_name',
         'last_name',
@@ -26,35 +25,72 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'status',
+        'email_verification_token',
+        'email_verification_sent_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'deactivated_at' => 'datetime',
+        'email_verification_sent_at' => 'datetime',
     ];
+
+    /**
+     * Determine if the user has verified their email address.
+     *
+     * @return bool
+     */
+    public function hasVerifiedEmail()
+    {
+        return ! is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the given user's email as verified.
+     *
+     * @return bool
+     */
+    public function markEmailAsVerified()
+    {
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->save();
+    }
+
+    /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail);
+    }
+
+    /**
+     * Get the email address that should be used for verification.
+     *
+     * @return string
+     */
+    public function getEmailForVerification()
+    {
+        return $this->email;
+    }
 
     /**
      * Determine role based on email domain
      */
     public static function determineRole($email)
     {
-        // Check for specific role-based emails
+        $email = strtolower($email);
+        
         if (str_contains($email, 'admin.dru@gmail.com') || str_contains($email, 'bantugonjayadmin.dru@gmail.com')) {
             return 'admin';
         } elseif (str_contains($email, 'emp.dru@gmail.com') || str_contains($email, 'bantugonjayemp.dru@gmail.com')) {
@@ -66,36 +102,37 @@ class User extends Authenticatable implements MustVerifyEmail
         } elseif (str_contains($email, 'sc.dru@gmail.com') || str_contains($email, 'bantugonjaysc.dru@gmail.com')) {
             return 'sc';
         } else {
-            return 'client'; // Default role
+            return 'client';
         }
     }
 
     /**
-     * Check if user account is active
+     * Account status methods
      */
     public function isActive()
     {
         return $this->status === 'active';
     }
 
-    /**
-     * Check if user account is deactivated
-     */
     public function isDeactivated()
     {
         return $this->status === 'deactivated';
     }
 
-   /**
-     * Deactivate the user account.
-     *
-     * @return bool
-     */
     public function deactivate()
     {
         try {
             $this->status = 'deactivated';
+            $this->deactivated_at = now();
+            $this->tokens()->delete(); // Revoke all API tokens
             $this->save();
+            
+            Log::info('User account deactivated', [
+                'user_id' => $this->id,
+                'email' => $this->email,
+                'role' => $this->role
+            ]);
+            
             return true;
         } catch (\Exception $e) {
             Log::error('Failed to deactivate user', [
@@ -106,9 +143,6 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
-    /**
-     * Reactivate user account
-     */
     public function reactivate()
     {
         try {
@@ -135,7 +169,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the user's full name
+     * Email verification methods
+     */
+    public function canResendVerification()
+    {
+        // Allow resending if no previous email was sent or if 1 minute has passed
+        return !$this->email_verification_sent_at || 
+               $this->email_verification_sent_at->diffInMinutes(now()) >= 1;
+    }
+
+    public function markVerificationEmailSent()
+    {
+        $this->email_verification_sent_at = now();
+        $this->save();
+    }
+
+    public function isVerificationExpired()
+    {
+        // Verification links expire after 60 minutes
+        return $this->email_verification_sent_at && 
+               $this->email_verification_sent_at->diffInMinutes(now()) > 60;
+    }
+
+    /**
+     * Accessors and mutators
      */
     public function getFullNameAttribute()
     {
@@ -143,23 +200,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope query to only include active users
+     * Scopes
      */
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
     }
 
-    /**
-     * Scope query to only include deactivated users
-     */
     public function scopeDeactivated($query)
     {
         return $query->where('status', 'deactivated');
     }
 
+    public function scopeVerified($query)
+    {
+        return $query->whereNotNull('email_verified_at');
+    }
+
+    public function scopeUnverified($query)
+    {
+        return $query->whereNull('email_verified_at');
+    }
+
     /**
-     * Boot method to set default values
+     * Boot method
      */
     protected static function boot()
     {
