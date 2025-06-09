@@ -13,6 +13,7 @@ import { HiOutlineBars3 } from "react-icons/hi2";
 
 const NavBar = () => {
     const [openMenu, setOpenMenu] = useState(false);
+    
     const menuOptions = [
         {
             text: "Home",

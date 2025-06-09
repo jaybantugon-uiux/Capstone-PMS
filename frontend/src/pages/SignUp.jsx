@@ -34,16 +34,18 @@ function SignUp() {
     }
 
     try {
-      await axios.post('http://localhost:8000/api/register', {
+      await axios.post('http://localhost:8000/api/auth/register', {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
+        username: formData.username,
         password: formData.password,
         password_confirmation: formData.confirmPassword,
       });
 
-      alert('Registration successful!');
-      navigate('/login');
+      localStorage.setItem('pendingVerificationEmail', formData.email);
+      
+      navigate('/verify-email');
     } catch (error) {
       if (error.response && error.response.data) {
         const messages = Object.values(error.response.data).flat();
@@ -60,17 +62,19 @@ function SignUp() {
         <Col md={8} lg={6}>
           <Card className="signup-card">
             <Card.Body className="p-4 position-relative">
-              <Button
-                variant="link"
-                className="back-button-circle"
-                onClick={() => navigate('/')}
-              >
-                <ArrowLeft size={20} />
-              </Button>
-              <h2 className="text-center mb-4">Create Account</h2>
+              <div className="form-container">
+                <button
+                  className="back-button-circle"
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowLeft size={20}/>
+                </button>
+                <h2 className="text-center mb-4">Create Account</h2>
+              </div>
               <Form onSubmit={handleSubmit}>
                 <Row>
-                  <Col md={6}>
+                  <Col md={6}>    
+
                     <Form.Group className="mb-3">
                       <Form.Label>First Name</Form.Label>
                       <Form.Control
@@ -81,8 +85,10 @@ function SignUp() {
                         required
                       />
                     </Form.Group>
+                    
                   </Col>
                   <Col md={6}>
+
                     <Form.Group className="mb-3">
                       <Form.Label>Last Name</Form.Label>
                       <Form.Control
@@ -93,6 +99,7 @@ function SignUp() {
                         required
                       />
                     </Form.Group>
+                    
                   </Col>
                 </Row>
 
@@ -102,6 +109,17 @@ function SignUp() {
                     type="email"
                     name="email"
                     value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Username:</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="username"
+                    value={formData.username}
                     onChange={handleChange}
                     required
                   />

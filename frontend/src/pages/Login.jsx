@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Google } from 'react-bootstrap-icons';
+import axios from 'axios'; // Add this import
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,19 +13,57 @@ const Login = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(''); // Add error state
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error when user types
   };
 
   const toggleShowPassword = () => {
     setShowPassword(prev => !prev);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add your login logic here
-    console.log(formData);
+    
+    try {
+        const response = await axios.post('http://localhost:8000/api/auth/login', {
+            email: formData.email,
+            password: formData.password,
+        });
+
+        if (response.data.status === 'success') {
+            const { token, user } = response.data;
+            
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            switch (user.role) {
+                case 'admin':
+                    navigate('/admin-dashboard');
+                    break;
+                case 'emp':
+                    navigate('/employee-dashboard');
+                    break;
+                case 'finance':
+                    navigate('/finance-dashboard');
+                    break;
+                case 'pm':
+                    navigate('/pm-dashboard');
+                    break;
+                case 'sc':
+                    navigate('/sc-dashboard');
+                    break;
+                case 'client':
+                default:
+                    navigate('/client-dashboard');
+                    break;
+            }
+        }
+    } catch (error) {
+        setError(error.response?.data?.message || 'An error occurred during login');
+    }
   };
 
   return (
@@ -33,14 +72,15 @@ const Login = () => {
         <Col md={8} lg={6}>
           <Card className="login-card">
             <Card.Body className="p-4 position-relative">
-              <Button 
-                variant="link" 
-                className="back-button-circle"
-                onClick={() => navigate('/')}
-              >
-                <ArrowLeft size={20} />
-              </Button>
-              <h2 className="text-center mb-4">Login</h2>
+              <div className="form-container">
+                <button
+                  className="back-button-circle"
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowLeft size={20}/>
+                </button>
+                <h2 className="text-center mb-4">Log In</h2>
+              </div>
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Email address</Form.Label>
@@ -63,6 +103,12 @@ const Login = () => {
                     required
                   />
                 </Form.Group>
+
+                {error && (
+                  <div className="alert alert-danger mt-3">
+                    {error}
+                  </div>
+                )}
 
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <Form.Check
