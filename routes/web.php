@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AccountController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -70,6 +71,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Account Management Routes
     Route::get('/account/deactivate', [AuthController::class, 'showDeactivateAccount'])->name('account.deactivate.form');
     Route::post('/account/deactivate', [AuthController::class, 'deactivateAccount'])->name('account.deactivate');
+
+    // Show the edit profile form
+    Route::get('account/edit', [AccountController::class, 'edit'])->name('account.edit')->middleware('auth');
+
+    // Handle the update of profile details
+    Route::post('account/update', [AccountController::class, 'update'])->name('account.update')->middleware('auth');
+
+    // Show the account reactivation form
+    Route::get('/account/reactivate', [AccountController::class, 'showReactivateForm'])->name('account.reactivate.form');
+
     
     // Role-specific dashboard routes
     Route::get('/admin-dashboard', function() {

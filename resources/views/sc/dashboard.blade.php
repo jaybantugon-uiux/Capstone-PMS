@@ -4,7 +4,6 @@
     <div class="container">
         <h1>SC Dashboard</h1>
         <p>Welcome, {{ auth()->user()->first_name }}!</p>
-
         <!-- Tasks Assigned to Me -->
         <h2 class="text-xl font-semibold text-gray-800 mt-6 mb-4">Tasks Assigned to Me</h2>
         @if($tasks->count() > 0)

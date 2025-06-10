@@ -3,8 +3,7 @@
 @section('content')
     <div class="container">
         <h1>Admin Dashboard</h1>
-        <p>Welcome, {{ auth()->user()->first_name }}!</p>
-        
+        <p>Welcome, {{ auth()->user()->first_name }}!</p>     
         <!-- Project Management Section -->
         <div class="mt-4">
             <h2>Project Management</h2>
