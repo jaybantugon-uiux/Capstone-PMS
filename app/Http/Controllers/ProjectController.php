@@ -86,6 +86,9 @@ class ProjectController extends Controller
             abort(403, 'Unauthorized to view this project.');
         }
         
+        // Eager load tasks relationship if needed
+        $project->load('tasks');
+        
         return view('projects.show', compact('project'));
     }
 
@@ -143,7 +146,8 @@ class ProjectController extends Controller
         $project = Project::findOrFail($id);
         $project->archived = false; // Set archived status to false
         $project->save();
-
-        return redirect()->route('projects.index')->with('success', 'Project restored successfully.');
+    // Removed duplicate show method to avoid redeclaration error.
+        $project = Project::with('tasks')->findOrFail($id);
+        return view('projects.show', compact('project'));
     }
 }

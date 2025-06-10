@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -95,19 +96,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('dashboard');
     })->middleware('role:client')->name('client.dashboard');
     
-    // Project Management Routes - Fixed routing
-  Route::prefix('projects')->name('projects.')->group(function () {
-    Route::middleware('role:pm,admin')->group(function () {
-        Route::get('/', [ProjectController::class, 'index'])->name('index');
-        Route::get('/create', [ProjectController::class, 'create'])->name('create');
-        Route::post('/', [ProjectController::class, 'store'])->name('store');
+    // Project Management Routes
+    Route::prefix('projects')->name('projects.')->group(function () {
+        Route::middleware('role:pm,admin')->group(function () {
+            Route::get('/', [ProjectController::class, 'index'])->name('index');
+            Route::get('/create', [ProjectController::class, 'create'])->name('create');
+            Route::post('/', [ProjectController::class, 'store'])->name('store');
+            Route::get('/{project}/edit', [ProjectController::class, 'edit'])->name('edit');
+            Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
+            Route::post('/{id}/archive', [ProjectController::class, 'archive'])->name('archive');
+            Route::post('/{id}/restore', [ProjectController::class, 'restore'])->name('restore');
+        });
+        
+        // Project show route - accessible to pm, admin, and assigned site coordinators
         Route::get('/{project}', [ProjectController::class, 'show'])->name('show');
-        Route::get('/{project}/edit', [ProjectController::class, 'edit'])->name('edit');
-        Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
-        Route::post('/{id}/archive', [ProjectController::class, 'archive'])->name('archive');
-        Route::post('/{id}/restore', [ProjectController::class, 'restore'])->name('restore');
     });
-});
+
+    // Task Management Routes
+    Route::prefix('tasks')->name('tasks.')->group(function () {
+        // Create task - only PM and Admin
+        Route::post('/projects/{project}', [TaskController::class, 'create'])->name('create');
+        
+        // Show task - accessible to admin, project creator, or assigned site coordinator
+        Route::get('/{task}', [TaskController::class, 'show'])->name('show');
+        
+        // Update task status - for site coordinators and admin
+        Route::patch('/{task}/status', [TaskController::class, 'updateStatus'])->name('update-status');
+    });
 });
 
 // Test Email Route (only in development)

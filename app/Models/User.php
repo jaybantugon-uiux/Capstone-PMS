@@ -91,7 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $email = strtolower($email);
         
-        if (str_contains($email, 'admin.dru@gmail.com') || str_contains($email, 'bantugonjayadmin.dru@gmail.com')) {
+        if (str_contains($email, 'main.dru@gmail.com') || str_contains($email, 'bantugonjaymain.dru@gmail.com')) {
             return 'admin';
         } elseif (str_contains($email, 'emp.dru@gmail.com') || str_contains($email, 'bantugonjayemp.dru@gmail.com')) {
             return 'emp';
