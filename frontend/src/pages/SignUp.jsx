@@ -11,6 +11,7 @@ function SignUp() {
     first_name: '',
     last_name: '',
     email: '',
+    username: '',
     password: '',
     confirmPassword: '',
   });
@@ -18,7 +19,7 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
 
   const toggleShowPassword = () => {
-    setShowPassword(prev => !prev);
+    setShowPassword((prev) => !prev);
   };
 
   const handleChange = (e) => {
@@ -29,7 +30,7 @@ function SignUp() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match.");
+      alert('Passwords do not match.');
       return;
     }
 
@@ -44,11 +45,12 @@ function SignUp() {
       });
 
       localStorage.setItem('pendingVerificationEmail', formData.email);
-      
+
       navigate('/verify-email');
     } catch (error) {
-      if (error.response && error.response.data) {
-        const messages = Object.values(error.response.data).flat();
+      if (error.response && error.response.data.errors) {
+        
+        const messages = Object.values(error.response.data.errors).flat();
         alert(messages.join('\n'));
       } else {
         alert('An error occurred. Please try again.');
@@ -67,14 +69,13 @@ function SignUp() {
                   className="back-button-circle"
                   onClick={() => navigate('/')}
                 >
-                  <ArrowLeft size={20}/>
+                  <ArrowLeft size={20} />
                 </button>
                 <h2 className="text-center mb-4">Create Account</h2>
               </div>
               <Form onSubmit={handleSubmit}>
                 <Row>
-                  <Col md={6}>    
-
+                  <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>First Name</Form.Label>
                       <Form.Control
@@ -85,10 +86,8 @@ function SignUp() {
                         required
                       />
                     </Form.Group>
-                    
                   </Col>
                   <Col md={6}>
-
                     <Form.Group className="mb-3">
                       <Form.Label>Last Name</Form.Label>
                       <Form.Control
@@ -99,7 +98,6 @@ function SignUp() {
                         required
                       />
                     </Form.Group>
-                    
                   </Col>
                 </Row>
 

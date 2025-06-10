@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Google } from 'react-bootstrap-icons';
-import axios from 'axios'; // Add this import
+import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,56 +13,60 @@ const Login = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(''); // Add error state
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // Clear error when user types
+    setError('');
   };
 
   const toggleShowPassword = () => {
-    setShowPassword(prev => !prev);
+    setShowPassword((prev) => !prev);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
-        const response = await axios.post('http://localhost:8000/api/auth/login', {
-            email: formData.email,
-            password: formData.password,
-        });
+      const response = await axios.post('http://localhost:8000/api/auth/login', {
+        email: formData.email,
+        password: formData.password,
+      });
 
-        if (response.data.status === 'success') {
-            const { token, user } = response.data;
-            
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+      if (response.data.status === 'success') {
+        const { token, user } = response.data;
 
-            switch (user.role) {
-                case 'admin':
-                    navigate('/admin-dashboard');
-                    break;
-                case 'emp':
-                    navigate('/employee-dashboard');
-                    break;
-                case 'finance':
-                    navigate('/finance-dashboard');
-                    break;
-                case 'pm':
-                    navigate('/pm-dashboard');
-                    break;
-                case 'sc':
-                    navigate('/sc-dashboard');
-                    break;
-                case 'client':
-                default:
-                    navigate('/client-dashboard');
-                    break;
-            }
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        switch (user.role) {
+          case 'admin':
+            navigate('/admin-dashboard');
+            break;
+          case 'emp':
+            navigate('/employee-dashboard');
+            break;
+          case 'finance':
+            navigate('/finance-dashboard');
+            break;
+          case 'pm':
+            navigate('/pm-dashboard');
+            break;
+          case 'sc':
+            navigate('/sc-dashboard');
+            break;
+          case 'client':
+          default:
+            navigate('/client-dashboard');
+            break;
         }
+      }
     } catch (error) {
+      if (error.response?.status === 403) {
+        setError('Access denied. Please check your credentials.');
+      } else {
         setError(error.response?.data?.message || 'An error occurred during login');
+      }
     }
   };
 
@@ -77,7 +81,7 @@ const Login = () => {
                   className="back-button-circle"
                   onClick={() => navigate('/')}
                 >
-                  <ArrowLeft size={20}/>
+                  <ArrowLeft size={20} />
                 </button>
                 <h2 className="text-center mb-4">Log In</h2>
               </div>
@@ -128,8 +132,8 @@ const Login = () => {
                   Create new account? <Link to="/signup">Sign up here</Link>
                 </div>
 
-                <Button 
-                  variant="outline-secondary" 
+                <Button
+                  variant="outline-secondary"
                   className="google-direct w-100 d-flex align-items-center justify-content-center gap-2 mb-3"
                 >
                   <Google size={16} />

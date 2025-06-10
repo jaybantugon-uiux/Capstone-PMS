@@ -8,16 +8,23 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Services\EmailService;
 use Exception;
 
 class AuthController extends Controller
 {
+    protected $emailService;
+
+    public function __construct(EmailService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
     public function showRegister()
     {
         return view('auth.register');
@@ -46,27 +53,22 @@ class AuthController extends Controller
 
             Auth::login($user);
 
-            // Send verification email to ALL users
-            try {
-                $user->sendEmailVerificationNotification();
-                Log::info('Email verification notification sent', [
+            // Send verification email using the service
+            $emailResult = $this->emailService->sendVerificationEmail($user);
+            
+            if (!$emailResult['success']) {
+                Log::warning('Email verification failed during registration', [
                     'user_id' => $user->id,
-                    'role' => $user->role,
-                    'email' => $user->email
-                ]);
-            } catch (Exception $e) {
-                Log::error('Failed to send verification email', [
-                    'user_id' => $user->id,
-                    'role' => $user->role,
-                    'error' => $e->getMessage(),
+                    'email_result' => $emailResult
                 ]);
                 
                 return redirect()->route('verification.notice')
-                    ->with('warning', 'Account created, but there was an issue sending the verification email.');
+                    ->with('warning', 'Account created successfully, but there was an issue sending the verification email. You can request a new one below.');
             }
 
             return redirect()->route('verification.notice')
                 ->with('status', 'Registration successful! Please check your email to verify your account.');
+                
         } catch (Exception $e) {
             Log::error('User registration failed', [
                 'error' => $e->getMessage(),
@@ -74,7 +76,7 @@ class AuthController extends Controller
             ]);
             
             return back()->withErrors(['registration' => 'Registration failed. Please try again.'])
-                        	->withInput();
+                        ->withInput();
         }
     }
 
@@ -83,48 +85,47 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
- public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    if (Auth::attempt($credentials, $request->boolean('remember'))) {
-        $user = Auth::user();
-        
-        // Temporary debug code
-        if (!($user instanceof User)) {
-            Log::error('User is not an instance of App\Models\User', [
-                'user_class' => get_class($user),
-                'user_data' => json_encode($user)
-            ]);
-            return back()->withErrors(['email' => 'Internal server error: Invalid user instance']);
-        }
-
-        // Check if account is deactivated
-        if ($user->isDeactivated()) {
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'Your account has been deactivated. You can reactivate it using the "Reactivate Account" option.',
-            ])->onlyInput('email');
-        }
-        
-        $request->session()->regenerate();
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::user();
             
-            Log::info('User logged in', [
-                'user_id' => Auth::id(),
-                'role' => Auth::user()->role
+            if (!($user instanceof User)) {
+                Log::error('User is not an instance of App\Models\User', [
+                    'user_class' => get_class($user),
+                ]);
+                return back()->withErrors(['email' => 'Internal server error: Invalid user instance']);
+            }
+
+            // Check if account is deactivated
+            if ($user->isDeactivated()) {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account has been deactivated. You can reactivate it using the "Reactivate Account" option.',
+                ])->onlyInput('email');
+            }
+            
+            $request->session()->regenerate();
+            
+            Log::info('User logged in successfully', [
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email_verified' => $user->hasVerifiedEmail()
             ]);
             
             // Require email verification for ALL users
-        if (!$user->hasVerifiedEmail()) {
-    Log::info('User needs email verification', [
-        'user_id' => Auth::id(),
-        'role' => Auth::user()->role
-    ]);
-    return redirect()->route('verification.notice');
-}
+            if (!$user->hasVerifiedEmail()) {
+                Log::info('Redirecting to email verification', [
+                    'user_id' => $user->id,
+                    'role' => $user->role
+                ]);
+                return redirect()->route('verification.notice');
+            }
             
             return redirect()->intended('dashboard');
         }
@@ -136,16 +137,17 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-     public function showVerificationNotice()
+    public function showVerificationNotice()
     {
-        /** @var User $user */
         $user = Auth::user();
 
         if ($user && $user->hasVerifiedEmail()) {
             return redirect()->route('dashboard');
         }
 
-        return view('auth.verify-email');
+        $emailStats = $user ? $this->emailService->getEmailStats($user) : null;
+
+        return view('auth.verify-email', compact('emailStats'));
     }
 
     public function verifyEmail(Request $request)
@@ -155,8 +157,7 @@ class AuthController extends Controller
 
         Log::info('Email verification attempt', [
             'user_id' => $userId,
-            'hash' => $hash,
-            'full_url' => $request->fullUrl()
+            'hash' => substr($hash, 0, 10) . '...' // Log only part of hash for security
         ]);
 
         $user = User::find($userId);
@@ -176,23 +177,12 @@ class AuthController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Account has been deactivated. Please reactivate your account first.']);
         }
 
-        // Check if user implements MustVerifyEmail
-        if (!($user instanceof MustVerifyEmail)) {
-            Log::error('Email verification failed - user does not implement MustVerifyEmail', [
+        // Verify the hash matches
+        if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+            Log::error('Email verification failed - hash mismatch', [
                 'user_id' => $user->id
             ]);
-            return redirect()->route('login')->withErrors(['email' => 'Invalid verification request.']);
-        }
-
-        // Verify the hash matches
-        $expectedHash = sha1($user->getEmailForVerification());
-        if (!hash_equals($expectedHash, $hash)) {
-            Log::error('Email verification failed - hash mismatch', [
-                'user_id' => $user->id,
-                'expected_hash' => $expectedHash,
-                'provided_hash' => $hash
-            ]);
-            return redirect()->route('login')->withErrors(['email' => 'Invalid verification link.']);
+            return redirect()->route('login')->withErrors(['email' => 'Invalid or expired verification link.']);
         }
 
         // Check if email is already verified
@@ -202,7 +192,6 @@ class AuthController extends Controller
                 'role' => $user->role
             ]);
             
-            // Log the user in if they're not already logged in
             if (!Auth::check()) {
                 Auth::login($user);
                 $request->session()->regenerate();
@@ -216,7 +205,8 @@ class AuthController extends Controller
             event(new Verified($user));
             Log::info('Email verified successfully', [
                 'user_id' => $user->id,
-                'role' => $user->role
+                'role' => $user->role,
+                'email' => $user->email
             ]);
         }
 
@@ -230,7 +220,28 @@ class AuthController extends Controller
             ]);
         }
 
-        return $this->redirectToDashboard($user)->with('status', 'Email verified successfully!');
+        return $this->redirectToDashboard($user)->with('status', 'Email verified successfully! Welcome to your dashboard.');
+    }
+
+    public function resendVerification(Request $request)
+    {
+        $user = $request->user();
+        
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        $emailResult = $this->emailService->sendVerificationEmail($user, true);
+
+        if ($emailResult['success']) {
+            return back()->with('status', 'Verification email sent successfully! Please check your inbox.');
+        } else {
+            $errorMessage = $emailResult['code'] === 'RATE_LIMITED' 
+                ? $emailResult['message'] 
+                : 'Failed to send verification email. Please try again.';
+                
+            return back()->withErrors(['email' => $errorMessage]);
+        }
     }
 
     private function redirectToDashboard($user)
@@ -252,228 +263,196 @@ class AuthController extends Controller
         }
     }
 
-    public function resendVerification(Request $request)
-    {
-        if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route('dashboard');
+    /**
+ * Show the forgot password form
+ */
+public function showForgotPassword()
+{
+    return view('auth.forgot-password');
+}
+
+/**
+ * Send password reset link
+ */
+public function sendResetLink(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+    ]);
+
+    $status = Password::sendResetLink($request->only('email'));
+
+    if ($status === Password::RESET_LINK_SENT) {
+        return back()->with('status', 'Password reset link sent to your email.');
+    }
+
+    return back()->withErrors([
+        'email' => 'Unable to send password reset link. Please check your email address.',
+    ]);
+}
+
+/**
+ * Show the reset password form
+ */
+public function showResetPassword(Request $request, $token = null)
+{
+    return view('auth.reset-password', [
+        'token' => $token,
+        'email' => $request->email
+    ]);
+}
+
+/**
+ * Reset password
+ */
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function (User $user, string $password) {
+            $user->forceFill([
+                'password' => Hash::make($password)
+            ])->setRememberToken(Str::random(60));
+
+            $user->save();
+            event(new PasswordReset($user));
         }
+    );
 
-        try {
-            $request->user()->sendEmailVerificationNotification();
-            Log::info('Verification email resent', [
-                'user_id' => $request->user()->id,
-                'role' => $request->user()->role
-            ]);
-            return back()->with('status', 'Verification link sent!');
-        } catch (Exception $e) {
-            Log::error('Failed to resend verification email', [
-                'user_id' => $request->user()->id,
-                'role' => $request->user()->role,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->withErrors(['email' => 'Failed to send verification email. Please try again.']);
-        }
+    if ($status === Password::PASSWORD_RESET) {
+        return redirect()->route('login')->with('status', 'Password reset successfully. You can now log in with your new password.');
     }
 
-    public function showForgotPassword()
-    {
-        return view('auth.forgot-password');
+    return back()->withErrors([
+        'email' => 'Unable to reset password. The token may be invalid or expired.',
+    ]);
+}
+
+/**
+ * Show account deactivation form
+ */
+public function showDeactivateAccount()
+{
+    return view('auth.deactivate-account');
+}
+
+/**
+ * Deactivate user account
+ */
+public function deactivateAccount(Request $request)
+{
+    $request->validate([
+        'password' => 'required',
+        'confirmation' => 'required|in:DEACTIVATE',
+    ], [
+        'confirmation.in' => 'Please type "DEACTIVATE" to confirm account deactivation.',
+    ]);
+
+    $user = $request->user();
+
+    if (!Hash::check($request->password, $user->password)) {
+        return back()->withErrors([
+            'password' => 'The provided password is incorrect.',
+        ]);
     }
 
-    public function sendResetLink(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
+    try {
+        $user->deactivate();
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with(['status' => __($status)])
-            : back()->withErrors(['email' => __($status)]);
-    }
-
-    public function showResetPassword(string $token)
-    {
-        return view('auth.reset-password', ['token' => $token]);
-    }
-
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
+        Log::info('User account deactivated', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'email' => $user->email
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->setRememberToken(Str::random(60));
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-                $user->save();
+        return redirect()->route('login')->with('status', 'Your account has been deactivated successfully.');
+    } catch (Exception $e) {
+        Log::error('Account deactivation failed', [
+            'user_id' => $user->id,
+            'error' => $e->getMessage()
+        ]);
+        
+        return back()->withErrors([
+            'deactivation' => 'Failed to deactivate account. Please try again.'
+        ]);
+    }
+}
 
-                event(new PasswordReset($user));
-            }
-        );
+/**
+ * Show account reactivation form
+ */
+public function showReactivateAccount()
+{
+    return view('auth.reactivate-account');
+}
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+/**
+ * Reactivate user account
+ */
+public function reactivateAccount(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return back()->withErrors([
+            'email' => 'The provided credentials are incorrect.',
+        ])->onlyInput('email');
     }
 
-    public function dashboard()
-    {
-        return view('dashboard');
+    if ($user->isActive()) {
+        return back()->withErrors([
+            'email' => 'This account is already active.',
+        ])->onlyInput('email');
     }
 
+    try {
+        $user->reactivate();
+
+        Log::info('User account reactivated', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'email' => $user->email
+        ]);
+
+        return redirect()->route('login')->with('status', 'Your account has been reactivated successfully. You can now log in.');
+    } catch (Exception $e) {
+        Log::error('Account reactivation failed', [
+            'user_id' => $user->id,
+            'error' => $e->getMessage()
+        ]);
+        
+        return back()->withErrors([
+            'reactivation' => 'Failed to reactivate account. Please try again.'
+        ])->onlyInput('email');
+    }
+}
+    
     public function logout(Request $request)
     {
         Log::info('User logged out', [
             'user_id' => Auth::id(),
             'role' => Auth::user()->role
         ]);
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        
         return redirect('/');
-    }
-
-    /**
-     * Show account deactivation form
-     */
-    public function showDeactivateAccount()
-    {
-        return view('auth.deactivate-account');
-    }
-
-    /**
-     * Deactivate user account
-     */
-    public function deactivateAccount(Request $request)
-    {
-        $request->validate([
-            'password' => 'required',
-            'confirmation' => 'required|in:DEACTIVATE',
-        ], [
-            'confirmation.in' => 'Please type "DEACTIVATE" to confirm account deactivation.',
-        ]);
-
-        $user = Auth::user();
-
-        // Verify password
-        if (!Hash::check($request->password, $user->password)) {
-            return back()->withErrors([
-                'password' => 'The provided password is incorrect.',
-            ]);
-        }
-
-        try {
-            /** @var \App\Models\User $user */
-            $user = Auth::user();
-            if (!$user) {
-                return back()->withErrors(['deactivation' => 'No authenticated user found.']);
-            }
-
-            $user->status = 'deactivated';
-            if ($user->save()) {
-                Log::info('User account deactivated', [
-                    'user_id' => $user->id,
-                    'role' => $user->role,
-                    'email' => $user->email
-                ]);
-
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return redirect()->route('login')->with('status', 'Your account has been deactivated successfully.');
-            } else {
-                return back()->withErrors(['deactivation' => 'Failed to deactivate account. Please try again.']);
-            }
-        } catch (Exception $e) {
-            Log::error('Account deactivation failed', [
-                'user_id' => $user->id ?? 'unknown',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return back()->withErrors(['deactivation' => 'Failed to deactivate account. Please try again.']);
-        }
-    }
-
-    /**
-     * Show account reactivation form
-     */
-    public function showReactivateAccount()
-    {
-        return view('auth.reactivate-account');
-    }
-
-    /**
-     * Reactivate user account
-     */
-    public function reactivateAccount(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors([
-                'email' => 'The provided credentials are incorrect.',
-            ])->withInput();
-        }
-
-        if ($user->isActive()) {
-            return back()->withErrors([
-                'email' => 'This account is already active.',
-            ])->withInput();
-        }
-
-        try {
-            // Reactivate the account
-            if ($user->reactivate()) {
-                Log::info('User account reactivated', [
-                    'user_id' => $user->id,
-                    'role' => $user->role,
-                    'email' => $user->email
-                ]);
-
-                return redirect()->route('login')->with('status', 'Your account has been reactivated successfully. You can now log in.');
-            } else {
-                return back()->withErrors(['reactivation' => 'Failed to reactivate account. Please try again.']);
-            }
-        } catch (Exception $e) {
-            Log::error('Account reactivation failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return back()->withErrors(['reactivation' => 'Failed to reactivate account. Please try again.']);
-        }
-    }
-
-    // Test email method for development
-    public function testEmail()
-    {
-        try {
-            Mail::raw('This is a test email from Laravel', function ($message) {
-                $message->to('test@example.com')
-                       ->subject('Test Email');
-            });
-            
-            return response()->json(['message' => 'Test email sent successfully']);
-        } catch (Exception $e) {
-            Log::error('Test email failed', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     }
 }

@@ -11,6 +11,8 @@ import VerifyEmail from './pages/VerifyEmail';
 import AdminDashboard from './dashboard/Admin';
 //import PMDashboard from './dashboard/ProjectManager';
 
+import UsersPage from "./dashboard/Users";
+
 function App() {
   return (
     <Router>
@@ -21,6 +23,7 @@ function App() {
         <Route path="/resetPassword" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/users" element={<UsersPage />} />
       </Routes>
     </Router>
   );

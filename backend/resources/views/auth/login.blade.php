@@ -53,9 +53,25 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary">Login</button>
+                        </form>
+
+                        <div class="mt-3 text-center">
                             <a href="{{ route('register') }}" class="btn btn-link">Need an account?</a>
                             <a href="{{ route('password.request') }}" class="btn btn-link">Forgot Password?</a>
-                        </form>
+                        </div>
+
+                        <!-- Reactivate Account Section -->
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="text-center">
+                                <p class="text-muted mb-2">
+                                    <small>Account deactivated?</small>
+                                </p>
+                                <a href="{{ route('account.reactivate.form') }}" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-user-check me-1"></i>
+                                    Reactivate Account
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

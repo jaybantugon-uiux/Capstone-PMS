@@ -85,41 +85,6 @@ const DashboardMain = () => {
             </Col>
           </Row>
 
-          <Card className="dashboard-card mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <Card.Title className="mb-0">Project Progress Tracker</Card.Title>
-                <Form.Select size="sm" style={{ width: 'auto' }}>
-                  <option>Google Office</option>
-                </Form.Select>
-              </div>
-              
-              <div className="progress-timeline mb-4">
-                <ProgressBar>
-                  <ProgressBar variant="success" now={40} key={1} />
-                  <ProgressBar variant="secondary" now={60} key={2} />
-                </ProgressBar>
-              </div>
-
-              <div className="table-responsive">
-                <Table hover className="dashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Task Accomplished</th>
-                      <th>Site Coordinator</th>
-                      <th>Equipments Used</th>
-                      <th>Workers</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Table rows will be populated from database */}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
         </Container>
       </main>
     </div>

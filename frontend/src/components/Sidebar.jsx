@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Navbar, Nav, Offcanvas, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -11,13 +12,41 @@ import Logo from "../assets/druLogo.png";
 import "../css/Dashboard.css";
 
 const navLinks = [
-  { icon: <DashboardIcon fontSize="medium" />, label: "Dashboard" },
-  { icon: <FolderIcon fontSize="medium" />, label: "Projects" },
-  { icon: <DescriptionIcon fontSize="medium" />, label: "Files" },
-  { icon: <AccountBalanceWalletIcon fontSize="medium" />, label: "Expenses" },
-  { icon: <BuildIcon fontSize="medium" />, label: "Equipments" },
-  { icon: <PeopleIcon fontSize="medium" />, label: "Users" },
-  { icon: <SettingsIcon fontSize="medium" />, label: "Settings" },
+  { 
+    icon: <DashboardIcon fontSize="medium" />, 
+    label: "Dashboard",
+    link: "/dashboard" 
+  },
+  { 
+    icon: <FolderIcon fontSize="medium" />, 
+    label: "Projects",
+    link: "/projects" 
+  },
+  { 
+    icon: <DescriptionIcon fontSize="medium" />, 
+    label: "Files",
+    link: "/files"
+  },
+  { 
+    icon: <AccountBalanceWalletIcon fontSize="medium" />, 
+    label: "Expenses",
+    link: "/expenses" 
+  },
+  { 
+    icon: <BuildIcon fontSize="medium" />, 
+    label: "Equipments",
+    link: "/equipments" 
+  },
+  { 
+    icon: <PeopleIcon fontSize="medium" />, 
+    label: "Users",
+    link: "/users"
+  },
+  { 
+    icon: <SettingsIcon fontSize="medium" />, 
+    label: "Settings",
+    link: "/settings" 
+  },
 ];
 
 const Sidebar = () => {
@@ -43,15 +72,15 @@ const Sidebar = () => {
         <Offcanvas.Body>
           <nav className="sidebar-nav">
             {navLinks.map((link, idx) => (
-              <a
+              <Link
                 key={idx}
-                href={`#${link.label.toLowerCase()}`}
+                to={link.link}
                 className="sidebar-link"
                 onClick={handleClose}
               >
                 {link.icon}
                 <span>{link.label}</span>
-              </a>
+              </Link>
             ))}
           </nav>
         </Offcanvas.Body>
@@ -63,10 +92,10 @@ const Sidebar = () => {
         </div>
         <nav className="sidebar-nav">
           {navLinks.map((link, idx) => (
-            <a key={idx} href={`#${link.label.toLowerCase()}`} className="sidebar-link">
+            <Link key={idx} to={link.link} className="sidebar-link">
               {link.icon}
               <span>{link.label}</span>
-            </a>
+            </Link>
           ))}
         </nav>
       </div>
