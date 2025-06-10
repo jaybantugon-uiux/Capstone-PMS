@@ -2,12 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\ProjectController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -97,8 +92,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->middleware('role:sc')->name('sc.dashboard');
     
     Route::get('/client-dashboard', function() {
-        return view('dashboard'); // Clients use the main dashboard view
+        return view('dashboard');
     })->middleware('role:client')->name('client.dashboard');
+    
+    // Project Management Routes - Fixed routing
+  Route::prefix('projects')->name('projects.')->group(function () {
+    Route::middleware('role:pm,admin')->group(function () {
+        Route::get('/', [ProjectController::class, 'index'])->name('index');
+        Route::get('/create', [ProjectController::class, 'create'])->name('create');
+        Route::post('/', [ProjectController::class, 'store'])->name('store');
+        Route::get('/{project}', [ProjectController::class, 'show'])->name('show');
+        Route::get('/{project}/edit', [ProjectController::class, 'edit'])->name('edit');
+        Route::put('/{project}', [ProjectController::class, 'update'])->name('update');
+        Route::post('/{id}/archive', [ProjectController::class, 'archive'])->name('archive');
+        Route::post('/{id}/restore', [ProjectController::class, 'restore'])->name('restore');
+    });
+});
 });
 
 // Test Email Route (only in development)

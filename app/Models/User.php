@@ -222,6 +222,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->whereNull('email_verified_at');
     }
 
+    public function projects()
+{
+    return $this->hasMany(Project::class, 'created_by');
+}
+
     /**
      * Boot method
      */

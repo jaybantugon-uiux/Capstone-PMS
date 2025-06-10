@@ -13,25 +13,27 @@ class RoleMiddleware
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @param  string  $role
+     * @param  string  ...$roles
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
+        // Check if the user is authenticated
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
-        if ($user->role !== $role) {
-            // Redirect to their appropriate dashboard
+
+        // Check if the user's role is among the allowed roles
+        if (!in_array($user->role, $roles)) {
             return $this->redirectToDashboard($user);
         }
 
+        // Check if the account is deactivated
         if ($user->isDeactivated()) {
-            auth()->logout();
+            Auth::logout();
             return redirect()->route('login')
                 ->withErrors(['email' => 'Your account has been deactivated.']);
         }
@@ -41,6 +43,9 @@ class RoleMiddleware
 
     /**
      * Redirect user to their role-specific dashboard
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Http\RedirectResponse
      */
     private function redirectToDashboard($user)
     {
