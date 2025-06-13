@@ -223,9 +223,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     public function projects()
-{
-    return $this->hasMany(Project::class, 'created_by');
-}
+    {
+        return $this->hasMany(Project::class, 'created_by');
+    }
+
+    public function assignedTasks()
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
 
     /**
      * Boot method

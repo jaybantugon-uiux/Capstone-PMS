@@ -12,9 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
-            $table->timestamps();
             $table->boolean('archived')->default(false);
+            $table->timestamps();
         });
     }
 
