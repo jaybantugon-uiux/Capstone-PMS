@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\ApiAuthController;
+use App\Http\Controllers\Api\Projects\ProjectController;
+use App\Http\Controllers\Api\Tasks\TaskController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +41,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Email verification
     Route::post('/email/verification-notification', [ApiAuthController::class, 'sendVerification'])
         ->middleware('throttle:6,1');
+    
+    // Project routes
+    Route::get('/projects', [ProjectController::class, 'index']); // Fetch active and archived projects
+    Route::post('/projects', [ProjectController::class, 'store']); // Create a new project
+    Route::put('/projects/{project}', [ProjectController::class, 'update']); // Update a project
+    Route::post('/projects/{id}/archive', [ProjectController::class, 'archive']); // Archive a project
+    Route::post('/projects/{id}/restore', [ProjectController::class, 'restore']); // Restore a project
+
+    // Task routes
+    Route::get('/tasks', [TaskController::class, 'index']); // Fetch tasks
+    Route::post('/tasks', [TaskController::class, 'store']); // Create a new task
+    Route::put('/tasks/{task}', [TaskController::class, 'update']); // Update a task
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy']); // Delete a task
 });
 
 // Health check endpoint

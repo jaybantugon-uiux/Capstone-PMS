@@ -11,7 +11,12 @@ import VerifyEmail from './pages/VerifyEmail';
 import AdminDashboard from './dashboard/Admin';
 //import PMDashboard from './dashboard/ProjectManager';
 
-import UsersPage from "./dashboard/Users";
+import TaskPage from "./pages/TaskManagement";
+import InventoryPage from "./pages/InventoryManagement";
+import EquipmentPage from "./pages/EquipmentMonitoring";
+import FilePage from "./pages/FileManagement";
+import ProjectPage from "./pages/ProjectMonitoring";
+import UsersPage from "./pages/Users";
 
 function App() {
   return (
@@ -23,7 +28,13 @@ function App() {
         <Route path="/resetPassword" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/task" element={<TaskPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/files" element={<FilePage />} />
+        <Route path="/equipment" element={<EquipmentPage />} />
+        <Route path="/project" element={<ProjectPage />} />
         <Route path="/users" element={<UsersPage />} />
+
       </Routes>
     </Router>
   );

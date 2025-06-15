@@ -8,6 +8,8 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import BuildIcon from "@mui/icons-material/Build";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import Logo from "../assets/druLogo.png";
 import "../css/Dashboard.css";
 
@@ -15,12 +17,22 @@ const navLinks = [
   { 
     icon: <DashboardIcon fontSize="medium" />, 
     label: "Dashboard",
-    link: "/dashboard" 
+    link: "/admin-dashboard" 
+  },
+  { 
+    icon: <AssignmentIcon fontSize="medium" />, 
+    label: "Task",
+    link: "/task" 
+  },
+  { 
+    icon: <InventoryIcon fontSize="medium" />, 
+    label: "Inventory",
+    link: "/inventory" 
   },
   { 
     icon: <FolderIcon fontSize="medium" />, 
     label: "Projects",
-    link: "/projects" 
+    link: "/project" 
   },
   { 
     icon: <DescriptionIcon fontSize="medium" />, 
@@ -35,7 +47,7 @@ const navLinks = [
   { 
     icon: <BuildIcon fontSize="medium" />, 
     label: "Equipments",
-    link: "/equipments" 
+    link: "/equipment" 
   },
   { 
     icon: <PeopleIcon fontSize="medium" />, 
@@ -46,7 +58,7 @@ const navLinks = [
     icon: <SettingsIcon fontSize="medium" />, 
     label: "Settings",
     link: "/settings" 
-  },
+  }
 ];
 
 const Sidebar = () => {
