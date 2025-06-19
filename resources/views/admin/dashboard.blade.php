@@ -80,6 +80,63 @@
                 </div>
             </div>
 
+            <!-- Equipment Management Card -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-boxes me-2"></i>Equipment Inventory
+                                    </h5>
+                                    <p class="text-muted mb-3">Manage and monitor equipment stock levels</p>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('equipment.index') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-list me-1"></i>View All
+                                        </a>
+                                        <a href="{{ route('equipment.create') }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-plus me-1"></i>Add New
+                                        </a>
+                                        <a href="{{ route('equipment.low-stock') }}" class="btn btn-outline-warning btn-sm">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Low Stock
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="text-primary">
+                                    <i class="fas fa-warehouse fa-3x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-chart-line me-2"></i>Quick Reports
+                                    </h5>
+                                    <p class="text-muted mb-3">Generate project and task reports</p>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('reports.generate') }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-file-alt me-1"></i>Generate
+                                        </a>
+                                        <a href="{{ route('reports.view-staff') }}" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-users me-1"></i>Staff Report
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="text-success">
+                                    <i class="fas fa-chart-pie fa-3x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Task Status Overview -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -216,48 +273,48 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3">
-                                    <a href="{{ route('projects.index') }}" class="btn btn-outline-primary w-100 mb-2">
-                                        <i class="fas fa-project-diagram"></i><br>
-                                        Manage Projects
-                                    </a>
-                                </div>
-                                <div class="col-md-3">
-                                    <a href="{{ route('tasks.index') }}" class="btn btn-outline-success w-100 mb-2">
-                                        <i class="fas fa-tasks"></i><br>
-                                        Manage Tasks
-                                    </a>
-                                </div>
-                                <div class="col-md-3">
-                                    <a href="{{ route('projects.archived') }}" class="btn btn-outline-secondary w-100 mb-2">
-                                        <i class="fas fa-archive"></i><br>
-                                        Archived Projects
-                                    </a>
-                                </div>
-                                <div class="col-md-3">
-                                    <a href="{{ route('tasks.archived') }}" class="btn btn-outline-secondary w-100 mb-2">
-                                        <i class="fas fa-archive"></i><br>
-                                        Archived Tasks
+                                <div class="col-md-2">
+                                    <a href="{{ route('projects.index') }}" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-project-diagram fa-2x mb-2"></i>
+                                        <span>Manage Projects</span>
                                     </a>
                                 </div>
                                 <div class="col-md-2">
-                                     <a href="{{ route('reports.view-staff') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center align-items-center">
-                                    <i class="fas fa-users fa-2x mb-2"></i>
-                                 <span>View Available Staff</span>
-                                     </a>
-                                </div>
-                                <div class="col-md-2">
-                                    <a href="{{ route('reports.generate') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center align-items-center">
-                                        <i class="fas fa-file-alt fa-2x mb-2"></i>
-                                        <span>Generate Reports</span>
+                                    <a href="{{ route('tasks.index') }}" class="btn btn-outline-success w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-tasks fa-2x mb-2"></i>
+                                        <span>Manage Tasks</span>
                                     </a>
                                 </div>
                                 <div class="col-md-2">
-                                    <a href="{{ route('tasks.calendar') }}" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                    <a href="{{ route('equipment.index') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-boxes fa-2x mb-2"></i>
+                                        <span>Equipment</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('projects.archived') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-archive fa-2x mb-2"></i>
+                                        <span>Archived Projects</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('tasks.archived') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-archive fa-2x mb-2"></i>
+                                        <span>Archived Tasks</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('reports.view-staff') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-users fa-2x mb-2"></i>
+                                        <span>View Staff</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('tasks.calendar') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                         <i class="fas fa-calendar-alt fa-2x mb-2"></i>
                                         <span>Calendar</span>
                                     </a>
-
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -270,4 +327,9 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+.opacity-75 {
+    opacity: 0.75;
+}
+</style>
 @endpush

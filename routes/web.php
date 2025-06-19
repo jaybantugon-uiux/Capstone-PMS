@@ -8,6 +8,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\EquipmentController;
 use App\Models\Project;
 use App\Models\Task;
 
@@ -159,7 +160,41 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('/activities', [ActivityController::class, 'index'])->name('activity.index');
+    
+// Equipment Inventory Routes
+Route::prefix('equipment')->name('equipment.')->middleware(['auth', 'verified'])->group(function () {
+    // Apply role middleware to the entire equipment group
+    Route::middleware('role:admin,emp')->group(function () {
+        // Main equipment routes
+        Route::get('/', [EquipmentController::class, 'index'])->name('index');
+        Route::get('/create', [EquipmentController::class, 'create'])->name('create');
+        Route::post('/', [EquipmentController::class, 'store'])->name('store');
+        Route::get('/{id}', [EquipmentController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [EquipmentController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [EquipmentController::class, 'update'])->name('update');
+        
+        // Archive and restore
+        Route::post('/{id}/archive', [EquipmentController::class, 'archive'])->name('archive');
+        Route::post('/{id}/restore', [EquipmentController::class, 'restore'])->name('restore');
+        Route::get('/archived/list', [EquipmentController::class, 'archived'])->name('archived');
+        
+        // Stock management
+        Route::get('/{id}/restock', [EquipmentController::class, 'restockForm'])->name('restock.form');
+        Route::post('/{id}/restock', [EquipmentController::class, 'restock'])->name('restock');
+        Route::get('/{id}/use-form', [EquipmentController::class, 'useForm'])->name('use.form');
+        Route::post('/{id}/use', [EquipmentController::class, 'useEquipment'])->name('use');
+        
+        // Bulk operations
+        Route::get('/bulk/restock', [EquipmentController::class, 'bulkRestockForm'])->name('bulk-restock.form');
+        Route::post('/bulk/restock', [EquipmentController::class, 'bulkRestock'])->name('bulk-restock');
+        
+        // Reports and logs
+        Route::get('/reports/low-stock/{threshold?}', [EquipmentController::class, 'lowStock'])->name('low-stock');
+        Route::get('/{id}/logs', [EquipmentController::class, 'logs'])->name('logs');
+    });
 });
+});
+
 
 if (app()->environment('local')) {
     Route::get('/test-email', [AuthController::class, 'testEmail'])->name('test.email');
