@@ -1,5 +1,5 @@
 {{-- resources/views/client/dashboard.blade.php --}}
-{{-- UPDATED: Removed project/task notifications, focus on progress reports and project viewing --}}
+{{-- UPDATED: Fixed layout arrangement and structure --}}
 @extends('app')
 
 @section('title', 'Client Dashboard')
@@ -19,6 +19,8 @@
         </div>
     </div>
 
+    <!-- Statistics Cards Row -->
+    <div class="row">
         <!-- Progress Reports -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
@@ -88,12 +90,31 @@
                 </div>
             </div>
         </div>
+
+        <!-- Active Projects -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Active Projects
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $projects->count() }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Main Content Row -->
     <div class="row">
         <!-- Recent Progress Reports -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-8 mb-4">
             <div class="card shadow">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">
@@ -175,11 +196,10 @@
             </div>
         </div>
 
-    <!-- Quick Actions and Information -->
-    <div class="row">
-        <!-- Quick Actions -->
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow">
+        <!-- Sidebar -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-bolt me-2"></i>Quick Actions
@@ -187,11 +207,11 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-6 mb-3">
                             <a href="{{ route('client.reports.index') }}" 
                                class="btn btn-outline-primary w-100 position-relative">
-                                <i class="fas fa-file-alt mb-2 d-block"></i>
-                                View Reports
+                                <i class="fas fa-file-alt mb-1 d-block"></i>
+                                <small>View Reports</small>
                                 @if($reportStats['unread_reports'] > 0)
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
                                         {{ $reportStats['unread_reports'] }}
@@ -199,31 +219,29 @@
                                 @endif
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-6 mb-3">
                             <a href="{{ route('photos.featured') }}" class="btn btn-outline-success w-100">
-                                <i class="fas fa-images mb-2 d-block"></i>
-                                Project Photos
+                                <i class="fas fa-images mb-1 d-block"></i>
+                                <small>Project Photos</small>
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-6 mb-3">
                             <a href="{{ route('photos.search') }}" class="btn btn-outline-info w-100">
-                                <i class="fas fa-search mb-2 d-block"></i>
-                                Search Photos
+                                <i class="fas fa-search mb-1 d-block"></i>
+                                <small>Search Photos</small>
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-6 mb-3">
                             <a href="{{ route('account.edit') }}" class="btn btn-outline-secondary w-100">
-                                <i class="fas fa-user-cog mb-2 d-block"></i>
-                                Settings
+                                <i class="fas fa-user-cog mb-1 d-block"></i>
+                                <small>Settings</small>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Information Panel -->
-        <div class="col-lg-4 mb-4">
+            <!-- Information Panel -->
             <div class="card shadow">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-info">
@@ -385,6 +403,18 @@
     background-color: #f8f9fa;
     border-radius: 0.375rem;
     transition: background-color 0.2s ease;
+}
+
+/* Quick actions responsive adjustments */
+@media (max-width: 768px) {
+    .col-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
 }
 </style>
 @endpush
