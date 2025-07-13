@@ -6,9 +6,9 @@
 
         <!-- Navigation -->
         <div class="mb-3">
-            <a href="?year={{ $prevMonth->year }}&month={{ $prevMonth->month }}" class="btn btn-secondary">Previous Month</a>
+            <a href="?year={{ $prevMonth->year }}&month={{ $prevMonth->month }}" class="btn btn-secondary"><</a>
             <span>{{ $date->format('F Y') }}</span>
-            <a href="?year={{ $nextMonth->year }}&month={{ $nextMonth->month }}" class="btn btn-secondary">Next Month</a>
+            <a href="?year={{ $nextMonth->year }}&month={{ $nextMonth->month }}" class="btn btn-secondary">></a>
         </div>
 
         <!-- Calendar Grid -->
@@ -18,7 +18,7 @@
                     <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody> 
                 @php
                     $dayCounter = 1;
                     $totalDays = $date->daysInMonth;
