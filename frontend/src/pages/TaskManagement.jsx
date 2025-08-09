@@ -565,13 +565,13 @@ const TaskManagement = () => {
                     <option value="Cancelled">Cancelled</option>
                   </Form.Select>
                 </Form.Group>
-                                 <div className="d-flex gap-2 justify-content-end">
-                   <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
-                     Cancel
-                   </Button>
-                   <Button variant="primary" type="submit">
-                     Create Task
-                   </Button>
+                  <div className="d-flex gap-2 justify-content-end">
+                    <Button variant="primary" type="submit">
+                      Create Task
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
+                      Cancel
+                    </Button>
                  </div>
               </Form>
             </Modal.Body>
@@ -635,9 +635,14 @@ const TaskManagement = () => {
                     }
                   />
                 </Form.Group>
-                <Button variant="primary" type="submit">
-                  Add Project
-                </Button>
+                  <div className="d-flex gap-2 justify-content-end">
+                    <Button variant="primary" type="submit">
+                      Create Project
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
+                      Cancel
+                    </Button>
+                  </div>
               </Form>
             </Modal.Body>
           </Modal>

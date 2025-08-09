@@ -71,4 +71,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/equipment', [EquipmentController::class, 'apiStore']);
     Route::put('/equipment/{id}', [EquipmentController::class, 'apiUpdate']);
     Route::post('/equipment/{id}/archive', [EquipmentController::class, 'apiArchive']);
+    
+    Route::post('/equipment/{id}/restock', [EquipmentController::class, 'apiRestock']);
 });

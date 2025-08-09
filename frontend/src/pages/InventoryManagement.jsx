@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import { Container, Row, Col, Card, Button, Table, Form, Modal } from 'react-bootstrap';
 import { PersonCircle } from 'react-bootstrap-icons';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RestockIcon from '@mui/icons-material/Inventory2';
 import EditIcon from '@mui/icons-material/Edit';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import '../css/Dashboard.css';
@@ -12,99 +13,50 @@ const InventoryManagement = () => {
   const [equipment, setEquipment] = useState([]);
   const [newEquipment, setNewEquipment] = useState({ name: '', quantity: 0, description: '' });
   const [editEquipment, setEditEquipment] = useState({});
+  const [restockData, setRestockData] = useState({ equipmentId: '', amount: 0, note: '' });
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      setUserRole(user.role);
-    }
-    fetchEquipment();
+    // Initialize with empty data - ready for your custom functions
   }, []);
 
-  const fetchEquipment = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/equipment', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        setEquipment(data.equipment);
-      }
-    } catch (error) {
-      console.error('Error fetching equipment:', error);
-    }
-  };
-
-  const handleRestockSubmit = async (e) => {
+  const handleAddSubmit = (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:8000/api/equipment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(newEquipment),
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        fetchEquipment(); // refresh list
-        setNewEquipment({ name: '', quantity: 0, description: '' });
-        setShowRestockModal(false);
-      }
-    } catch (error) {
-      console.error('Error restocking equipment:', error);
-    }
+    
+    // Add your custom function here
+    console.log('Add equipment:', newEquipment);
   };
 
-  const handleEditSubmit = async (e) => {
+  const handleRestockSubmit = (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch(`http://localhost:8000/api/equipment/${editEquipment.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(editEquipment),
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        fetchEquipment(); // refresh list
-        setShowEditModal(false);
-      }
-    } catch (error) {
-      console.error('Error updating equipment:', error);
-    }
+    
+    // Add your custom restock function here
+    console.log('Restock equipment:', restockData);
   };
 
-  const handleArchiveSubmit = async (equipmentId) => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/equipment/${equipmentId}/archive`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        fetchEquipment(); // refresh list
-        setShowArchiveModal(false);
-      }
-    } catch (error) {
-      console.error('Error archiving equipment:', error);
-    }
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    
+    // Add your custom edit function here
+    console.log('Edit equipment:', editEquipment);
+  };
+
+  const handleArchiveSubmit = (equipmentId) => {
+    // Add your custom archive function here
+    console.log('Archive equipment ID:', equipmentId);
   };
 
   const handleEquipmentChange = (e) => {
     const { name, value } = e.target;
     setNewEquipment({ ...newEquipment, [name]: value });
+  };
+
+  const handleRestockChange = (e) => {
+    const { name, value } = e.target;
+    setRestockData({ ...restockData, [name]: value });
   };
 
   const handleEditEquipmentChange = (e) => {
@@ -116,6 +68,10 @@ const InventoryManagement = () => {
     admin: 'Admin',
     emp: 'Employee',
     inventory: 'Inventory Manager',
+    finance: 'Finance Admin',
+    pm: 'Project Manager',
+    sc: 'Site Coordinator',
+    client: 'Client',
   };
 
   return (
@@ -128,9 +84,15 @@ const InventoryManagement = () => {
               <div className="dashboard-sidebar-wrapper">
                 <Sidebar className="dashboard-sidebar" />
               </div>
+
               <div className="d-flex align-items-center gap-2">
                 <PersonCircle size={40} />
-                <Form.Select size="sm" className="border-0 bg-transparent" style={{ width: 'auto' }} disabled>
+                <Form.Select
+                  size="sm"
+                  className="border-0 bg-transparent"
+                  style={{ width: 'auto' }}
+                  disabled
+                >
                   <option>{roleLabelMap[userRole] || 'User'}</option>
                 </Form.Select>
               </div>
@@ -140,14 +102,37 @@ const InventoryManagement = () => {
           {/* Actions */}
           <Row className="mb-4">
             <Col className="d-flex justify-content-end gap-2">
-              <Button variant="primary" onClick={() => setShowRestockModal(true)}>
-                <AddCircleOutlineIcon className="me-2" /> Restock Equipment
+              <Button
+                variant="primary"
+                className="add-equipment-modal"
+                onClick={() => setShowAddModal(true)}
+              >
+                <AddCircleOutlineIcon className="me-2 me-md-2" />
+                <span className="d-none d-md-inline">Add New Equipment</span>
               </Button>
-              <Button variant="primary" onClick={() => setShowEditModal(true)}>
-                <EditIcon className="me-2" /> Edit Equipment
+              <Button
+                variant="primary"
+                className="restock-equipment-modal"
+                onClick={() => setShowRestockModal(true)}
+              >
+                <RestockIcon className="me-0 me-md-2" />
+                <span className="d-none d-md-inline">Restock Equipment</span>
               </Button>
-              <Button variant="danger" onClick={() => setShowArchiveModal(true)}>
-                <ArchiveIcon className="me-2" /> Archive Equipment
+              <Button
+                variant="primary"
+                className="edit-equipment-modal"
+                onClick={() => setShowEditModal(true)}
+              >
+                <EditIcon className="me-0 me-md-2" />
+                <span className="d-none d-md-inline">Edit Equipment</span>
+              </Button>
+              <Button
+                variant="primary"
+                className="archive-equipment-modal"
+                onClick={() => setShowArchiveModal(true)}
+              >
+                <ArchiveIcon className="me-0 me-md-2" />
+                <span className="d-none d-md-inline">Archive Equipment</span>
               </Button>
             </Col>
           </Row>
@@ -156,7 +141,9 @@ const InventoryManagement = () => {
           <Row>
             <Col>
               <Card className="mb-4">
-                <Card.Header><h5>Equipment List</h5></Card.Header>
+                <Card.Header>
+                  <h5>Equipment List</h5>
+                </Card.Header>
                 <Card.Body>
                   <Table responsive bordered hover>
                     <thead>
@@ -185,53 +172,175 @@ const InventoryManagement = () => {
             </Col>
           </Row>
 
-          {/* Restock Modal */}
-          <Modal show={showRestockModal} onHide={() => setShowRestockModal(false)} centered>
-            <Modal.Header closeButton><Modal.Title>Restock Equipment</Modal.Title></Modal.Header>
+          {/* Add Equipment Modal */}
+          <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
+            <Modal.Header closeButton>
+              <Modal.Title>Add New Equipment</Modal.Title>
+            </Modal.Header>
             <Modal.Body>
-              <Form onSubmit={handleRestockSubmit}>
+              <Form onSubmit={handleAddSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Equipment Name</Form.Label>
-                  <Form.Control type="text" name="name" value={newEquipment.name} onChange={handleEquipmentChange} required />
+                  <Form.Control 
+                    type="text" 
+                    name="name" 
+                    value={newEquipment.name} 
+                    onChange={handleEquipmentChange} 
+                    required 
+                  />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control type="number" name="quantity" value={newEquipment.quantity} onChange={handleEquipmentChange} required />
+                  <Form.Label>Initial Quantity</Form.Label>
+                  <Form.Control 
+                    type="number" 
+                    name="quantity" 
+                    value={newEquipment.quantity} 
+                    onChange={handleEquipmentChange} 
+                    required 
+                  />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control as="textarea" name="description" value={newEquipment.description} onChange={handleEquipmentChange} rows={3} />
+                  <Form.Control 
+                    as="textarea" 
+                    name="description" 
+                    value={newEquipment.description} 
+                    onChange={handleEquipmentChange} 
+                    rows={3}
+                  />
                 </Form.Group>
-                <Button variant="primary" type="submit">Restock</Button>
+                <div className="d-flex gap-2 justify-content-end">
+                  <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" type="submit">
+                    Add Equipment
+                  </Button>
+                </div>
+              </Form>
+            </Modal.Body>
+          </Modal>
+
+          {/* Restock Modal */}
+          <Modal show={showRestockModal} onHide={() => setShowRestockModal(false)} centered>
+            <Modal.Header closeButton>
+              <Modal.Title>Restock Equipment</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form onSubmit={handleRestockSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Select Equipment</Form.Label>
+                  <Form.Select 
+                    name="equipmentId" 
+                    value={restockData.equipmentId} 
+                    onChange={handleRestockChange} 
+                    required
+                  >
+                    <option value="">Choose equipment to restock...</option>
+                    {equipment.filter(item => !item.archived).map(item => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} (Current: {item.quantity})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Amount to Add</Form.Label>
+                  <Form.Control 
+                    type="number" 
+                    name="amount" 
+                    value={restockData.amount} 
+                    onChange={handleRestockChange} 
+                    min="1" 
+                    required 
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Note (Optional)</Form.Label>
+                  <Form.Control 
+                    as="textarea" 
+                    name="note" 
+                    value={restockData.note} 
+                    onChange={handleRestockChange} 
+                    rows={2} 
+                    placeholder="Optional note about this restock..."
+                  />
+                </Form.Group>
+                <div className="d-flex gap-2 justify-content-end">
+                  <Button variant="secondary" onClick={() => setShowRestockModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" type="submit">
+                    Restock Equipment
+                  </Button>
+                </div>
               </Form>
             </Modal.Body>
           </Modal>
 
           {/* Edit Modal */}
-          <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
-            <Modal.Header closeButton><Modal.Title>Update Equipment</Modal.Title></Modal.Header>
+          <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Update Equipment</Modal.Title>
+            </Modal.Header>
             <Modal.Body>
               <Form onSubmit={handleEditSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Equipment Name</Form.Label>
-                  <Form.Control type="text" name="name" value={editEquipment.name || ''} onChange={handleEditEquipmentChange} required />
+                  <Form.Label>Select Equipment to Edit</Form.Label>
+                  <Form.Select 
+                    value={editEquipment.id || ''} 
+                    onChange={(e) => {
+                      const selectedEquipment = equipment.find(item => item.id == e.target.value);
+                      if (selectedEquipment) {
+                        setEditEquipment({
+                          id: selectedEquipment.id,
+                          name: selectedEquipment.name,
+                          quantity: selectedEquipment.quantity,
+                          description: selectedEquipment.description || ''
+                        });
+                      }
+                    }}
+                    required
+                  >
+                    <option value="">Choose equipment to edit...</option>
+                    {equipment.filter(item => !item.archived).map(item => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control type="number" name="quantity" value={editEquipment.quantity || ''} onChange={handleEditEquipmentChange} required />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Description</Form.Label>
-                  <Form.Control as="textarea" name="description" value={editEquipment.description || ''} onChange={handleEditEquipmentChange} rows={3} />
-                </Form.Group>
-                <Button variant="primary" type="submit">Save Changes</Button>
+                {editEquipment.id && (
+                  <>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Equipment Name</Form.Label>
+                      <Form.Control type="text" name="name" value={editEquipment.name || ''} onChange={handleEditEquipmentChange} required />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Quantity</Form.Label>
+                      <Form.Control type="number" name="quantity" value={editEquipment.quantity || ''} onChange={handleEditEquipmentChange} required />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Description</Form.Label>
+                      <Form.Control as="textarea" name="description" value={editEquipment.description || ''} onChange={handleEditEquipmentChange} rows={3} />
+                    </Form.Group>
+                    <div className="d-flex gap-2 justify-content-end">
+                      <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                        Cancel
+                      </Button>
+                      <Button variant="primary" type="submit">
+                        Save Changes
+                      </Button>
+                    </div>
+                  </>
+                )}
               </Form>
             </Modal.Body>
           </Modal>
 
           {/* Archive Modal */}
-          <Modal show={showArchiveModal} onHide={() => setShowArchiveModal(false)} centered>
-            <Modal.Header closeButton><Modal.Title>Archive Equipment</Modal.Title></Modal.Header>
+          <Modal show={showArchiveModal} onHide={() => setShowArchiveModal(false)} centered size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Archive Equipment</Modal.Title>
+            </Modal.Header>
             <Modal.Body>
               <h5>Select Equipment to Archive</h5>
               <Table responsive bordered hover>
@@ -245,7 +354,7 @@ const InventoryManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {equipment.map((item, index) => (
+                  {equipment.filter(item => !item.archived).map((item, index) => (
                     <tr key={item.id}>
                       <td>{index + 1}</td>
                       <td>{item.name}</td>

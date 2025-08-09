@@ -457,6 +457,7 @@ class EquipmentController extends Controller
             return redirect()->route('equipment.index')->with('error', 'Unable to load low stock report.');
         }
     }
+
     public function apiIndex()
     {
         try {
@@ -476,29 +477,109 @@ class EquipmentController extends Controller
         }
     }
 
-    public function apiStore(Request $request)
+    public function apiRestock(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'description' => 'nullable|string'
+            'amount' => 'required|integer|min:1|max:10000',
+            'note' => 'nullable|string|max:255',
         ]);
 
         try {
-            $equipment = Equipment::create([
-                'name' => $request->name,
-                'description' => $request->description,
-                'stock' => $request->quantity
-            ]);
+            DB::transaction(function () use ($request, $id) {
+                $equipment = Equipment::lockForUpdate()->findOrFail($id);
+                
+                if ($equipment->archived) {
+                    throw new \Exception('Cannot restock archived equipment.');
+                }
+                
+                // Check if new stock would exceed maximum
+                $newStock = $equipment->stock + $request->amount;
+                if ($newStock > 10000) {
+                    throw new \Exception('Total stock would exceed maximum limit of 10,000 units.');
+                }
+                
+                $equipment->increment('stock', $request->amount);
+
+                EquipmentStockLog::create([
+                    'equipment_id' => $equipment->id,
+                    'user_id' => auth()->id(),
+                    'change' => $request->amount,
+                    'note' => $request->note ?: 'Equipment restocked via API',
+                ]);
+            });
 
             return response()->json([
                 'status' => 'success',
-                'equipment' => $equipment
+                'message' => 'Equipment restocked successfully!'
             ]);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to add equipment.'
+                'message' => $e->getMessage() ?: 'Failed to restock equipment.'
+            ], 400);
+        }
+    }
+
+    public function apiStore(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255|unique:equipment,name',
+                'quantity' => 'required|integer|min:0|max:10000',
+                'description' => 'nullable|string|max:1000'
+            ], [
+                'name.required' => 'Equipment name is required.',
+                'name.unique' => 'This equipment name already exists.',
+                'quantity.required' => 'Initial stock amount is required.',
+                'quantity.integer' => 'Stock must be a valid number.',
+                'quantity.min' => 'Stock cannot be negative.',
+                'quantity.max' => 'Stock cannot exceed 10,000 units.',
+            ]);
+
+            DB::transaction(function () use ($request, &$equipment) {
+                $equipment = Equipment::create([
+                    'name' => $request->name,
+                    'description' => $request->description,
+                    'stock' => $request->quantity,
+                    'min_stock_level' => 10, // Default minimum stock level
+                    'archived' => false
+                ]);
+
+                // Only create log if initial stock is greater than 0
+                if ($request->quantity > 0) {
+                    EquipmentStockLog::create([
+                        'equipment_id' => $equipment->id,
+                        'user_id' => auth()->id(),
+                        'change' => $request->quantity,
+                        'note' => 'Initial stock addition when equipment was created via API',
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Equipment added successfully!',
+                'equipment' => [
+                    'id' => $equipment->id,
+                    'name' => $equipment->name,
+                    'description' => $equipment->description,
+                    'quantity' => $equipment->stock,
+                    'archived' => $equipment->archived
+                ]
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('API Equipment creation error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to add equipment: ' . $e->getMessage()
             ], 500);
         }
     }
