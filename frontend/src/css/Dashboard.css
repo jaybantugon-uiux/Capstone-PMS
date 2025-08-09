@@ -6,7 +6,7 @@
 }
 
 .dashboard-layout body {
-  background: #E9E5E3;
+  background-color: #E9E5E3;
   overflow-x: hidden;
 }
 
@@ -23,10 +23,6 @@
   background-color: #f5f5f5;
   min-height: 100vh;
   padding: 0rem 0.5rem;
-}
-
-.dashboard-sidebar-wrapper {
-  margin-left: -5vw;
 }
 
 .sidebar-offcanvas {
@@ -102,7 +98,6 @@
   font-size: 1.2rem;
   flex-shrink: 0;
 }
-
 
 .dashboard-card {
   border: none;
@@ -182,24 +177,22 @@ button:focus {
   margin-left: auto;
 }
 
-/* Adjust buttons inside modals */
 .modal-footer button {
-  width: 100%; /* Full width for buttons inside modals */
-  max-width: none; /* Remove max-width constraint */
-  padding: 0.75rem 1rem; /* Adjust padding for better appearance */
-  border-radius: 0.5rem; /* Keep consistent rounded corners */
-  font-size: 1rem; /* Slightly larger font for modal buttons */
+  width: 100%; 
+  max-width: none; 
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
 }
 
 .modal-footer button:hover {
-  background-color: #0056b3; /* Darker blue for hover state */
+  background-color: #0056b3;
 }
 
 .modal-footer button:focus {
-  outline: none; /* Remove focus outline */
+  outline: none; 
 }
 
-/* Responsive adjustments for modals */
 @media (max-width: 768px) {
   .modal-header .btn-close {
     position: absolute;
@@ -208,11 +201,9 @@ button:focus {
   }
 
   .modal-footer button {
-    width: 100%; /* Ensure buttons take full width in mobile view */
+    width: 100%;
   }
-}
 
-@media (max-width: 768px) {
   .button-group {
     display: flex;
     flex-wrap: wrap;
@@ -226,18 +217,6 @@ button:focus {
 
   .button-group.four-buttons button {
     flex: 1 1 calc(25% - 0.5rem);
-  }
-}
-
-@media (min-width: 768px) {
-  .button-group {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-  }
-
-  button {
-    width: auto;
   }
 }
 

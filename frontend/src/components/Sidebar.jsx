@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { Navbar, Nav, Offcanvas, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import BuildIcon from "@mui/icons-material/Build";
 import PeopleIcon from "@mui/icons-material/People";
-import SettingsIcon from "@mui/icons-material/Settings";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import InventoryIcon from "@mui/icons-material/Inventory";
+import LogoutIcon from "@mui/icons-material/Logout";
 import Logo from "../assets/druLogo.png";
 import "../css/Dashboard.css";
 
@@ -55,17 +55,26 @@ const navLinks = [
     link: "/users"
   },
   { 
-    icon: <SettingsIcon fontSize="medium" />, 
-    label: "Settings",
-    link: "/settings" 
+    icon: <LogoutIcon fontSize="medium" />, 
+    label: "Logout",
+    link: "/logout" 
   }
 ];
 
 const Sidebar = () => {
   const [show, setShow] = useState(false);
+  const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    sessionStorage.clear();
+    navigate("/login");
+  };
 
   return (
     <>
@@ -83,17 +92,32 @@ const Sidebar = () => {
         </Offcanvas.Header>
         <Offcanvas.Body>
           <nav className="sidebar-nav">
-            {navLinks.map((link, idx) => (
-              <Link
-                key={idx}
-                to={link.link}
-                className="sidebar-link"
-                onClick={handleClose}
-              >
-                {link.icon}
-                <span>{link.label}</span>
-              </Link>
-            ))}
+            {navLinks.map((link, idx) =>
+              link.label === "Logout" ? (
+                <a
+                  key={idx}
+                  href="/logout"
+                  className="sidebar-link"
+                  onClick={e => {
+                    handleClose();
+                    handleLogout(e);
+                  }}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </a>
+              ) : (
+                <Link
+                  key={idx}
+                  to={link.link}
+                  className="sidebar-link"
+                  onClick={handleClose}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              )
+            )}
           </nav>
         </Offcanvas.Body>
       </Offcanvas>
@@ -103,12 +127,24 @@ const Sidebar = () => {
           <img src={Logo} alt="Logo" className="logo" />
         </div>
         <nav className="sidebar-nav">
-          {navLinks.map((link, idx) => (
-            <Link key={idx} to={link.link} className="sidebar-link">
-              {link.icon}
-              <span>{link.label}</span>
-            </Link>
-          ))}
+          {navLinks.map((link, idx) =>
+            link.label === "Logout" ? (
+              <a
+                key={idx}
+                href="/logout"
+                className="sidebar-link"
+                onClick={handleLogout}
+              >
+                {link.icon}
+                <span>{link.label}</span>
+              </a>
+            ) : (
+              <Link key={idx} to={link.link} className="sidebar-link">
+                {link.icon}
+                <span>{link.label}</span>
+              </Link>
+            )
+          )}
         </nav>
       </div>
     </>

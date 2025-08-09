@@ -4,65 +4,44 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @param  string  ...$roles
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, ...$roles)
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // Check if the user is authenticated
-        if (!Auth::check()) {
+        if (!auth()->check()) {
             return redirect()->route('login');
         }
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+        $user = auth()->user();
 
-        // Check if the user's role is among the allowed roles
-        if (!in_array($user->role, $roles)) {
-            return $this->redirectToDashboard($user);
+        // Check if user has any of the required roles
+        if (empty($roles) || in_array($user->role, $roles)) {
+            return $next($request);
         }
 
-        // Check if the account is deactivated
-        if ($user->isDeactivated()) {
-            Auth::logout();
-            return redirect()->route('login')
-                ->withErrors(['email' => 'Your account has been deactivated.']);
-        }
-
-        return $next($request);
-    }
-
-    /**
-     * Redirect user to their role-specific dashboard
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    private function redirectToDashboard($user)
-    {
+        // Role-specific redirects for better UX
         switch ($user->role) {
             case 'admin':
-                return redirect()->route('admin.dashboard');
-            case 'emp':
-                return redirect()->route('employee.dashboard');
-            case 'finance':
-                return redirect()->route('finance.dashboard');
+                return redirect()->route('admin.dashboard')->with('error', 'Access denied to that section.');
             case 'pm':
-                return redirect()->route('pm.dashboard');
+                return redirect()->route('pm.dashboard')->with('error', 'Access denied to that section.');
             case 'sc':
-                return redirect()->route('sc.dashboard');
+                return redirect()->route('sc.dashboard')->with('error', 'Access denied to that section.');
             case 'client':
+                return redirect()->route('client.dashboard')->with('error', 'Access denied to that section.');
+            case 'emp':
+                return redirect()->route('employee.dashboard')->with('error', 'Access denied to that section.');
+            case 'finance':
+                return redirect()->route('finance.dashboard')->with('error', 'Access denied to that section.');
             default:
-                return redirect()->route('client.dashboard');
+                return redirect()->route('dashboard')->with('error', 'Access denied.');
         }
     }
 }

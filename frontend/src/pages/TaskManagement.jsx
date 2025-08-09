@@ -22,6 +22,8 @@ const TaskManagement = () => {
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
+    start_date: '',
+    end_date: '',
     created_by: '',
     archived: false,
   });
@@ -38,38 +40,7 @@ const TaskManagement = () => {
       const user = JSON.parse(userData);
       setUserRole(user.role);
     }
-
-    fetchTasks();
-    fetchProjects();
   }, []);
-
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/tasks', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      setTasks(data.tasks);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/projects', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      setProjects(data.activeProjects.concat(data.archivedProjects));
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
 
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
@@ -116,6 +87,8 @@ const TaskManagement = () => {
         setNewProject({
           name: '',
           description: '',
+          start_date: '',
+          end_date: '',
           created_by: '',
           archived: false,
         });
@@ -418,6 +391,26 @@ const TaskManagement = () => {
                     value={newProject.description}
                     onChange={handleProjectChange}
                     rows={3}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="start_date"
+                    value={newProject.start_date || ''}
+                    onChange={handleProjectChange}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="end_date"
+                    value={newProject.end_date || ''}
+                    onChange={handleProjectChange}
                     required
                   />
                 </Form.Group>

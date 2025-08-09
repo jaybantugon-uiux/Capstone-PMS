@@ -1,6 +1,7 @@
 <?php
 
 return [
+
     /*
     |--------------------------------------------------------------------------
     | Cross-Origin Resource Sharing (CORS) Configuration
@@ -14,17 +15,27 @@ return [
     |
     */
 
-    'paths' => ['api/*'], // Apply CORS to API routes
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'], // Allow all HTTP methods
+    'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'], // Allow all origins (or specify domains like ['http://localhost:5173'])
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+        'https://127.0.0.1:5173',
+    ],
 
-    'allowed_headers' => ['*'], // Allow all headers
+    'allowed_origins_patterns' => [],
+
+    'allowed_headers' => ['*'],
 
     'exposed_headers' => [],
 
     'max_age' => 0,
 
-    'supports_credentials' => false, // Set to true if cookies or authorization headers are needed
+    'supports_credentials' => true,
+
 ];

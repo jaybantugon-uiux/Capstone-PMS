@@ -11,15 +11,19 @@ class CreateTasksTable extends Migration
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
             $table->string('task_name');
-            $table->text('description');
-            $table->unsignedBigInteger('assigned_to'); // This will link to the User (Site Coordinator)
+            $table->text('description')->nullable();
+            $table->unsignedBigInteger('assigned_to'); // Site Coordinator
+            $table->unsignedBigInteger('created_by'); // Project Manager/Admin who created the task
             $table->unsignedBigInteger('project_id');
-            $table->enum('status', ['pending', 'in_progress', 'completed']);
+            $table->date('due_date')->nullable();
+            $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
+            $table->boolean('archived')->default(false);
             $table->timestamps();
 
             // Foreign Keys
-            $table->foreign('assigned_to')->references('id')->on('users');
-            $table->foreign('project_id')->references('id')->on('projects');
+            $table->foreign('assigned_to')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('project_id')->references('id')->on('projects')->onDelete('cascade');
         });
     }
 
