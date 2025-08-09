@@ -1,11 +1,28 @@
 import React from 'react';
 import { Container, Card, Button, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Envelope, ArrowLeft } from 'react-bootstrap-icons';
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isVerified = params.get('verified') === '1';
   const email = localStorage.getItem('pendingVerificationEmail');
+  navigate('/verify-email');
+
+  const handleResend = async () => {
+    try {
+      await fetch('http://localhost:8000/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      alert('Verification email resent!');
+    } catch (err) {
+      alert('Failed to resend verification email.');
+    }
+  };
 
   return (
     <Container className="py-5">
@@ -40,6 +57,12 @@ const VerifyEmail = () => {
                   If you don't see the email, check your spam folder.
                 </Card.Text>
 
+                {isVerified && (
+                  <div className="alert alert-success mt-3">
+                    Your email has been verified! You can now log in.
+                  </div>
+                )}
+
                 <div className="d-grid gap-2">
                   <Button 
                     variant="primary" 
@@ -55,6 +78,14 @@ const VerifyEmail = () => {
                   >
                     Back to Login
                   </Button>
+
+                  <Button 
+                    variant="outline-primary"
+                    className="mb-3"
+                    onClick={handleResend}
+                  >
+                    Resend Verification Email
+                  </Button>
                 </div>
               </div>
             </Card.Body>
@@ -66,3 +97,4 @@ const VerifyEmail = () => {
 };
 
 export default VerifyEmail;
+

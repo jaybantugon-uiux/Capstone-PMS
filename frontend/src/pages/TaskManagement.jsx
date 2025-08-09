@@ -12,12 +12,15 @@ const TaskManagement = () => {
   const [userRole, setUserRole] = useState('');
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
   const [newTask, setNewTask] = useState({
     task_name: '',
     description: '',
     assigned_to: '',
     project_id: '',
     status: 'Pending',
+    due_date: '',
+    created_by: '',
   });
   const [newProject, setNewProject] = useState({
     name: '',
@@ -40,19 +43,102 @@ const TaskManagement = () => {
       const user = JSON.parse(userData);
       setUserRole(user.role);
     }
+    fetchProjects();
+    fetchTasks();
+    fetchUsers();
   }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/projects', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await response.json();
+      console.log('Fetched projects:', data);
+      if (data.success) {
+        const sortedProjects = [...data.projects].sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+        setProjects(sortedProjects);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/tasks', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await response.json();
+      console.log('Fetched tasks:', data);
+      if (data.success) {
+        const sortedTasks = [...data.tasks].sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+        setTasks(sortedTasks);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/users', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await response.json();
+      console.log('Fetched users:', data);
+      if (data.success) {
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        return;
+      }
+
+      // Get current user for created_by field
+      const userData = localStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+      
+      const taskData = {
+        ...newTask,
+        created_by: user ? user.id : '',
+      };
+
       const response = await fetch('http://localhost:8000/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newTask),
+        body: JSON.stringify(taskData),
       });
+
+      // Check if response is redirect (HTML instead of JSON)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert('Authentication failed. Please log in again.');
+        return;
+      }
+
       const data = await response.json();
       if (data.status === 'success') {
         setTasks([...tasks, data.task]);
@@ -62,11 +148,24 @@ const TaskManagement = () => {
           assigned_to: '',
           project_id: '',
           status: 'Pending',
+          due_date: '',
+          created_by: '',
         });
         setShowTaskModal(false);
+        // Refresh tasks list
+        fetchTasks();
+        alert('Task created successfully!');
+      } else {
+        console.error('Error creating task:', data.message);
+        alert('Failed to create task: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error adding task:', error);
+      if (error.message.includes('Failed to fetch')) {
+        alert('Authentication failed or server error. Please log in again.');
+      } else {
+        alert('Error creating task. Please try again.');
+      }
     }
   };
 
@@ -82,8 +181,8 @@ const TaskManagement = () => {
         body: JSON.stringify(newProject),
       });
       const data = await response.json();
-      if (data.status === 'success') {
-        setProjects([...projects, data.project]);
+      console.log(data);
+      if (data.status === 'success' || data.success === true) {
         setNewProject({
           name: '',
           description: '',
@@ -93,6 +192,7 @@ const TaskManagement = () => {
           archived: false,
         });
         setShowProjectModal(false);
+        fetchProjects();
       }
     } catch (error) {
       console.error('Error adding project:', error);
@@ -102,21 +202,44 @@ const TaskManagement = () => {
   const handleEditTaskSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        return;
+      }
+
       const response = await fetch(`http://localhost:8000/api/tasks/${editTask.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(editTask),
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert('Authentication failed. Please log in again.');
+        return;
+      }
+  
       const data = await response.json();
       if (data.status === 'success') {
-        setTasks(tasks.map((task) => (task.id === editTask.id ? data.task : task)));
+        setTasks(tasks.map((task) =>
+          task.id === editTask.id ? data.task : task
+        ));
         setShowEditTaskModal(false);
+        alert('Task updated successfully!');
+      } else {
+        alert('Error: ' + (data.message || 'Failed to update task.'));
       }
     } catch (error) {
       console.error('Error editing task:', error);
+      if (error.message.includes('Failed to fetch')) {
+        alert('Authentication failed or server error. Please log in again.');
+      } else {
+        alert('Error editing task. Please try again.');
+      }
     }
   };
 
@@ -153,9 +276,31 @@ const TaskManagement = () => {
     setEditTask({ ...editTask, [name]: value });
   };
 
-  const handleTaskSelection = (task) => {
-    setEditTask(task);
-    setShowTaskSelection(false);
+
+
+  // Helper function to format status for display
+  const formatStatus = (status) => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Helper function to get status badge color
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'in_progress':
+        return 'primary';
+      case 'on_hold':
+        return 'warning';
+      case 'cancelled':
+        return 'danger';
+      case 'pending':
+      default:
+        return 'secondary';
+    }
   };
 
   const roleLabelMap = {
@@ -244,7 +389,8 @@ const TaskManagement = () => {
                         <th>#</th>
                         <th>Name</th>
                         <th>Description</th>
-                        <th>Created By</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
                         <th>Archived</th>
                       </tr>
                     </thead>
@@ -254,7 +400,16 @@ const TaskManagement = () => {
                           <td>{index + 1}</td>
                           <td>{project.name}</td>
                           <td>{project.description}</td>
-                          <td>{project.created_by}</td>
+                                                     <td>
+                             {project.start_date
+                               ? new Date(project.start_date).toISOString().split('T')[0]
+                               : ''}
+                           </td>
+                           <td>
+                             {project.end_date
+                               ? new Date(project.end_date).toISOString().split('T')[0]
+                               : ''}
+                           </td>
                           <td>{project.archived ? 'Yes' : 'No'}</td>
                         </tr>
                       ))}
@@ -279,8 +434,10 @@ const TaskManagement = () => {
                         <th>Task Name</th>
                         <th>Description</th>
                         <th>Assigned To</th>
-                        <th>Project ID</th>
+                        <th>Project</th>
+                        <th>Due Date</th>
                         <th>Status</th>
+                        <th>Created</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -289,9 +446,32 @@ const TaskManagement = () => {
                           <td>{index + 1}</td>
                           <td>{task.task_name}</td>
                           <td>{task.description}</td>
-                          <td>{task.assigned_to}</td>
-                          <td>{task.project_id}</td>
-                          <td>{task.status}</td>
+                          <td>
+                            {users.find(u => u.id === task.assigned_to)?.first_name} {users.find(u => u.id === task.assigned_to)?.last_name} ({users.find(u => u.id === task.assigned_to)?.username})
+                          </td>
+                          <td>
+                            {projects.find(p => p.id === task.project_id)?.name || task.project_id}
+                          </td>
+                                                     <td>
+                             {task.due_date
+                               ? new Date(task.due_date).toISOString().split('T')[0]
+                               : '-'}
+                           </td>
+                          <td>
+                            <span className={`badge bg-${
+                              task.status === 'Completed' ? 'success' :
+                              task.status === 'In Progress' ? 'primary' :
+                              task.status === 'On Hold' ? 'warning' :
+                              task.status === 'Cancelled' ? 'danger' : 'secondary'
+                            }`}>
+                              {task.status}
+                            </span>
+                          </td>
+                                                     <td>
+                             {task.created_at
+                               ? new Date(task.created_at).toISOString().split('T')[0]
+                               : '-'}
+                           </td>
                         </tr>
                       ))}
                     </tbody>
@@ -303,7 +483,7 @@ const TaskManagement = () => {
 
           <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered>
             <Modal.Header closeButton>
-              <Modal.Title>Add New Task</Modal.Title>
+              <Modal.Title>Create New Task</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form onSubmit={handleTaskSubmit}>
@@ -314,6 +494,7 @@ const TaskManagement = () => {
                     name="task_name"
                     value={newTask.task_name}
                     onChange={handleTaskChange}
+                    placeholder="Enter task name"
                     required
                   />
                 </Form.Group>
@@ -325,27 +506,49 @@ const TaskManagement = () => {
                     value={newTask.description}
                     onChange={handleTaskChange}
                     rows={3}
+                    placeholder="Enter task description"
                     required
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label>Assigned To</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Select
                     name="assigned_to"
                     value={newTask.assigned_to}
                     onChange={handleTaskChange}
                     required
-                  />
+                  >
+                    <option value="">Select an assignee</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name} ({user.username})
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Project ID</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Label>Project</Form.Label>
+                  <Form.Select
                     name="project_id"
                     value={newTask.project_id}
                     onChange={handleTaskChange}
                     required
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Due Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="due_date"
+                    value={newTask.due_date}
+                    onChange={handleTaskChange}
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -358,11 +561,18 @@ const TaskManagement = () => {
                     <option value="Pending">Pending</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Completed">Completed</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Cancelled">Cancelled</option>
                   </Form.Select>
                 </Form.Group>
-                <Button variant="primary" type="submit">
-                  Add Task
-                </Button>
+                                 <div className="d-flex gap-2 justify-content-end">
+                   <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
+                     Cancel
+                   </Button>
+                   <Button variant="primary" type="submit">
+                     Create Task
+                   </Button>
+                 </div>
               </Form>
             </Modal.Body>
           </Modal>
@@ -415,16 +625,6 @@ const TaskManagement = () => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Created By</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="created_by"
-                    value={newProject.created_by}
-                    onChange={handleProjectChange}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
                   <Form.Label>Archived</Form.Label>
                   <Form.Check
                     type="checkbox"
@@ -442,7 +642,7 @@ const TaskManagement = () => {
             </Modal.Body>
           </Modal>
 
-          <Modal show={showEditTaskModal} onHide={() => setShowEditTaskModal(false)} centered>
+                     <Modal show={showEditTaskModal} onHide={() => setShowEditTaskModal(false)} centered size="lg">
             <Modal.Header closeButton>
               <Modal.Title>Edit Task</Modal.Title>
             </Modal.Header>
@@ -468,20 +668,26 @@ const TaskManagement = () => {
                           <td>{index + 1}</td>
                           <td>{task.task_name}</td>
                           <td>{task.description}</td>
-                          <td>{task.assigned_to}</td>
-                          <td>{task.project_id}</td>
-                          <td>{task.status}</td>
                           <td>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => {
-                                handleTaskSelection(task);
-                                setShowTaskSelection(false); // Switch to form view
-                              }}
-                            >
-                              Edit
-                            </Button>
+                            {users.find(u => u.id === task.assigned_to)?.first_name} {users.find(u => u.id === task.assigned_to)?.last_name} ({users.find(u => u.id === task.assigned_to)?.username})
+                          </td>
+                          <td>{projects.find(p => p.id === task.project_id)?.name || task.project_id}</td>
+                          <td>
+                            <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
+                              {formatStatus(task.status)}
+                            </span>
+                          </td>
+                          <td>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => {
+                              setEditTask({ ...task });
+                              setShowTaskSelection(false);
+                            }}
+                          >
+                            Edit
+                          </Button>
                           </td>
                         </tr>
                       ))}
@@ -513,22 +719,43 @@ const TaskManagement = () => {
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>Assigned To</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Select
                       name="assigned_to"
                       value={editTask.assigned_to || ''}
                       onChange={handleEditTaskChange}
                       required
-                    />
+                    >
+                      <option value="">Select an assignee</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.first_name} {user.last_name} ({user.username})
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Form.Group>
                   <Form.Group className="mb-3">
-                    <Form.Label>Project ID</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Label>Project</Form.Label>
+                    <Form.Select
                       name="project_id"
                       value={editTask.project_id || ''}
                       onChange={handleEditTaskChange}
                       required
+                    >
+                      <option value="">Select a project</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Due Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="due_date"
+                      value={editTask.due_date || ''}
+                      onChange={handleEditTaskChange}
                     />
                   </Form.Group>
                   <Form.Group className="mb-3">
@@ -541,17 +768,24 @@ const TaskManagement = () => {
                       <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
+                      <option value="On Hold">On Hold</option>
+                      <option value="Cancelled">Cancelled</option>
                     </Form.Select>
                   </Form.Group>
-                  <Button variant="primary" type="submit">
-                    Save Changes
-                  </Button>
+                  <div className="d-flex gap-2 justify-content-end">
+                    <Button variant="secondary" onClick={() => setShowEditTaskModal(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="primary" type="submit">
+                      Save Changes
+                    </Button>
+                  </div>
                 </Form>
               )}
             </Modal.Body>
           </Modal>
 
-          <Modal show={showArchiveTaskModal} onHide={() => setShowArchiveTaskModal(false)} centered>
+                     <Modal show={showArchiveTaskModal} onHide={() => setShowArchiveTaskModal(false)} centered size="lg">
             <Modal.Header closeButton>
               <Modal.Title>Archive Task</Modal.Title>
             </Modal.Header>
@@ -575,9 +809,15 @@ const TaskManagement = () => {
                       <td>{index + 1}</td>
                       <td>{task.task_name}</td>
                       <td>{task.description}</td>
-                      <td>{task.assigned_to}</td>
-                      <td>{task.project_id}</td>
-                      <td>{task.status}</td>
+                      <td>
+                        {users.find(u => u.id === task.assigned_to)?.first_name} {users.find(u => u.id === task.assigned_to)?.last_name} ({users.find(u => u.id === task.assigned_to)?.username})
+                      </td>
+                      <td>{projects.find(p => p.id === task.project_id)?.name || task.project_id}</td>
+                      <td>
+                        <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
+                          {formatStatus(task.status)}
+                        </span>
+                      </td>
                       <td>
                         <Button
                           variant="danger"

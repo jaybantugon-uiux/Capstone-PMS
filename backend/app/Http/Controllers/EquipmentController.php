@@ -25,7 +25,7 @@ class EquipmentController extends Controller
         } catch (\Exception $e) {
             Log::error('Equipment index error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Unable to load equipment list.');
-        }
+        } 
     }
 
     // Show archived equipment
@@ -455,6 +455,98 @@ class EquipmentController extends Controller
         } catch (\Exception $e) {
             Log::error('Low stock view error: ' . $e->getMessage());
             return redirect()->route('equipment.index')->with('error', 'Unable to load low stock report.');
+        }
+    }
+    public function apiIndex()
+    {
+        try {
+            $equipment = Equipment::select('id', 'name', 'description', 'stock as quantity', 'archived')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'equipment' => $equipment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to load equipment list.'
+            ], 500);
+        }
+    }
+
+    public function apiStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'description' => 'nullable|string'
+        ]);
+
+        try {
+            $equipment = Equipment::create([
+                'name' => $request->name,
+                'description' => $request->description,
+                'stock' => $request->quantity
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'equipment' => $equipment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to add equipment.'
+            ], 500);
+        }
+    }
+
+    public function apiUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:0',
+            'description' => 'nullable|string'
+        ]);
+
+        try {
+            $equipment = Equipment::findOrFail($id);
+            $equipment->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'stock' => $request->quantity
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'equipment' => $equipment
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update equipment.'
+            ], 500);
+        }
+    }
+
+    public function apiArchive($id)
+    {
+        try {
+            $equipment = Equipment::findOrFail($id);
+            $equipment->archived = true;
+            $equipment->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Equipment archived successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to archive equipment.'
+            ], 500);
         }
     }
 }

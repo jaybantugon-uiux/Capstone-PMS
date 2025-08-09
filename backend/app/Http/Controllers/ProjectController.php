@@ -409,4 +409,42 @@ class ProjectController extends Controller
         
         return view('projects.archived', compact('projects'));
     }
+
+    public function apiStore(Request $request)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after:start_date',
+        ]);
+
+        $project = Project::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'] ?? null,
+            'created_by' => Auth::id(),
+            'archived' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Project created successfully.',
+            'project' => $project,
+        ]);
+    }
+
+    public function apiIndex()
+    {
+        $projects = \App\Models\Project::all();
+        return response()->json([
+            'success' => true,
+            'projects' => $projects,
+        ]);
+    }
 }

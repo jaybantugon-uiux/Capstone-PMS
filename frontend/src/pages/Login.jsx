@@ -32,8 +32,9 @@ const Login = () => {
         email: formData.email,
         password: formData.password,
       });
+      console.log(response.data);
 
-      if (response.data.status === 'success') {
+      if (response.data.success === true) {
         const { token, user } = response.data;
 
         localStorage.setItem('token', token);

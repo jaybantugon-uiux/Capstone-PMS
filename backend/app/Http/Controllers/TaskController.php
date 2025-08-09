@@ -454,4 +454,139 @@ class TaskController extends Controller
         'today'
     ));
 }
+
+    private function getStatusColor($status)
+    {
+        switch ($status) {
+            case 'completed':
+                return '#28a745';
+            case 'in_progress':
+                return '#007bff';
+            case 'pending':
+                return '#ffc107';
+            case 'on_hold':
+                return '#fd7e14';
+            case 'cancelled':
+                return '#dc3545';
+            default:
+                return '#6c757d';
+        }
+    }
+
+    // API Methods
+    public function apiIndex()
+    {
+        $user = Auth::user();
+        
+        if ($user->role === 'admin') {
+            $tasks = Task::where('archived', false)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } elseif ($user->role === 'pm') {
+            $tasks = Task::where('created_by', $user->id)
+                ->where('archived', false)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } elseif ($user->role === 'sc') {
+            $tasks = Task::where('assigned_to', $user->id)
+                ->where('archived', false)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } else {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'tasks' => $tasks,
+        ]);
+    }
+
+    public function apiStore(Request $request)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'task_name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'assigned_to' => 'required|exists:users,id',
+            'project_id' => 'required|exists:projects,id',
+            'status' => 'required|in:Pending,In Progress,Completed,On Hold,Cancelled',
+            'due_date' => 'nullable|date',
+            'created_by' => 'nullable|exists:users,id',
+        ]);
+
+        $task = Task::create([
+            'task_name' => $validated['task_name'],
+            'description' => $validated['description'] ?? null,
+            'assigned_to' => $validated['assigned_to'],
+            'project_id' => $validated['project_id'],
+            'status' => strtolower(str_replace(' ', '_', $validated['status'])),
+            'due_date' => $validated['due_date'] ?? null,
+            'created_by' => $validated['created_by'] ?? Auth::id(),
+            'archived' => false,
+        ]);
+
+        // Load relationships for response
+        $task->load(['creator', 'siteCoordinator', 'project']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Task created successfully.',
+            'task' => $task,
+        ]);
+    }
+
+    public function apiUpdate(Request $request, Task $task)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'task_name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'assigned_to' => 'required|exists:users,id',
+            'project_id' => 'required|exists:projects,id',
+            'status' => 'required|in:Pending,In Progress,Completed,On Hold,Cancelled',
+            'due_date' => 'nullable|date',
+        ]);
+
+        $task->update([
+            'task_name' => $validated['task_name'],
+            'description' => $validated['description'] ?? null,
+            'assigned_to' => $validated['assigned_to'],
+            'project_id' => $validated['project_id'],
+            'status' => strtolower(str_replace(' ', '_', $validated['status'])),
+            'due_date' => $validated['due_date'] ?? null,
+        ]);
+
+        // Load relationships for response
+        $task->load(['creator', 'siteCoordinator', 'project']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Task updated successfully.',
+            'task' => $task,
+        ]);
+    }
+
+    public function apiArchive(Task $task)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $task->update(['archived' => true]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Task archived successfully.',
+        ]);
+    }
 }

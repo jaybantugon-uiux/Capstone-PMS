@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -176,9 +176,9 @@ class ApiAuthController extends Controller
     /**
      * Verify email
      */
-    public function verifyEmail(Request $request)
+    public function verifyEmail(Request $request, $id, $hash)
     {
-        $user = User::find($request->route('id'));
+        $user = User::find($id);
 
         if (!$user) {
             return response()->json([
@@ -187,7 +187,7 @@ class ApiAuthController extends Controller
             ], 404);
         }
 
-        if (!hash_equals(sha1($user->getEmailForVerification()), $request->route('hash'))) {
+        if (!hash_equals(sha1($user->getEmailForVerification()), $hash)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid verification link.'
@@ -548,5 +548,21 @@ class ApiAuthController extends Controller
             'success' => false,
             'message' => 'Unable to reset password.'
         ], 400);
+    }
+
+    /**
+     * Get list of users for dropdown
+     */
+    public function apiUsers()
+    {
+        $users = User::select('id', 'username', 'first_name', 'last_name', 'role')
+            ->where('status', 'active')
+            ->orderBy('username')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'users' => $users,
+        ]);
     }
 }

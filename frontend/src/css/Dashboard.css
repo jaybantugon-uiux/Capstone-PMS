@@ -301,3 +301,408 @@ button:focus {
   }
 }
 
+/* Enhanced Modal Styles */
+.modal {
+  backdrop-filter: blur(5px);
+  background-color: rgba(0, 0, 0, 0.5);
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  overflow: hidden;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border-bottom: none;
+  padding: 1.5rem 2rem;
+  position: relative;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-header .btn-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  margin: 0;
+  padding: 0;
+}
+
+.modal-header .btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.modal-header .btn-close::before {
+  content: '×';
+  font-size: 1.5rem;
+  color: white;
+  font-weight: bold;
+}
+
+.modal-body {
+  padding: 2rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Form Styles */
+.modal .form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal .form-control,
+.modal .form-select {
+  border: 2px solid #e9ecef;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  background-color: #ffffff;
+}
+
+.modal .form-control::placeholder {
+  color: #6c757d;
+  opacity: 0.7;
+}
+
+.modal textarea.form-control {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Button Styles */
+.modal .btn {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: none;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal .btn-primary {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+}
+
+.modal .btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+.modal .btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+  color: white;
+}
+
+.modal .btn-secondary:hover {
+  background: linear-gradient(135deg, #545b62 0%, #3d4449 100%);
+}
+
+.modal .btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.modal .btn-danger:hover {
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+}
+
+/* Table Styles in Modals */
+.modal .table {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.modal .table thead th {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: none;
+  padding: 1rem;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal .table tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal .table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Badge Styles */
+.modal .badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Responsive Modal Sizes */
+@media (max-width: 576px) {
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .modal-content {
+    border-radius: 0.75rem;
+  }
+  
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+    max-height: 60vh;
+  }
+  
+  .modal .form-control,
+  .modal .form-select {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.95rem;
+  }
+  
+  .modal .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.95rem;
+  }
+  
+  .modal .table {
+    font-size: 0.8rem;
+  }
+  
+  .modal .table thead th,
+  .modal .table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+  .modal-dialog {
+    margin: 1rem auto;
+    max-width: 90%;
+  }
+  
+  .modal-header {
+    padding: 1.25rem 1.75rem;
+  }
+  
+  .modal-body {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .modal-dialog {
+    margin: 1.5rem auto;
+    max-width: 80%;
+  }
+  
+  .modal-header {
+    padding: 1.5rem 2rem;
+  }
+  
+  .modal-body {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .modal-dialog {
+    margin: 2rem auto;
+    max-width: 70%;
+  }
+  
+  .modal-header {
+    padding: 1.75rem 2.5rem;
+  }
+  
+  .modal-body {
+    padding: 2.5rem;
+  }
+  
+  .modal-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Large Modal for Tables */
+.modal-dialog.modal-lg {
+  max-width: 90%;
+}
+
+@media (max-width: 768px) {
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+    margin: 0.5rem;
+  }
+}
+
+/* Animation for Modal */
+.modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out;
+  transform: translate(0, -50px);
+}
+
+.modal.show .modal-dialog {
+  transform: none;
+}
+
+/* Button Group in Modals */
+.modal .d-flex.gap-2 {
+  gap: 0.75rem !important;
+}
+
+@media (max-width: 576px) {
+  .modal .d-flex.gap-2 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+  
+  .modal .d-flex.gap-2 .btn {
+    width: 100%;
+  }
+}
+
+/* Form Group Spacing */
+.modal .form-group {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 576px) {
+  .modal .form-group {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Checkbox and Radio Styles */
+.modal .form-check {
+  padding-left: 1.75rem;
+}
+
+.modal .form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-left: -1.75rem;
+  border: 2px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+.modal .form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.modal .form-check-label {
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Loading States */
+.modal .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Success/Error States */
+.modal .form-control.is-valid {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.modal .form-control.is-invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.modal .invalid-feedback {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Modal Footer */
+.modal-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  padding: 1.5rem 2rem;
+  border-radius: 0 0 1rem 1rem;
+}
+
+@media (max-width: 576px) {
+  .modal-footer {
+    padding: 1rem 1.5rem;
+  }
+}
+

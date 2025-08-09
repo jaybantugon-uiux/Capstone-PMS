@@ -2,7 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\ApiAuthController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\EquipmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +42,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Email verification
     Route::post('/email/verification-notification', [ApiAuthController::class, 'sendVerification'])
         ->middleware('throttle:6,1');
+    
+    // Project routes
+    Route::get('projects', [ProjectController::class, 'apiIndex']);
+    Route::post('projects', [ProjectController::class, 'apiStore']);
+    
+    // User routes
+    Route::get('users', [ApiAuthController::class, 'apiUsers']);
+    
+    // Task routes
+    Route::get('tasks', [TaskController::class, 'apiIndex']);
+    Route::post('tasks', [TaskController::class, 'apiStore']);
+    Route::put('tasks/{task}', [TaskController::class, 'apiUpdate']);
+    Route::post('tasks/{task}/archive', [TaskController::class, 'apiArchive']);
 });
 
 // Health check endpoint
@@ -48,4 +64,11 @@ Route::get('/health', function () {
         'message' => 'API is working',
         'timestamp' => now()->toISOString()
     ]);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/equipment', [EquipmentController::class, 'apiIndex']);
+    Route::post('/equipment', [EquipmentController::class, 'apiStore']);
+    Route::put('/equipment/{id}', [EquipmentController::class, 'apiUpdate']);
+    Route::post('/equipment/{id}/archive', [EquipmentController::class, 'apiArchive']);
 });
