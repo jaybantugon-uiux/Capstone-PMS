@@ -54,6 +54,20 @@ class Project extends Model
         return $this->hasMany(ProjectClient::class);
     }
 
+        // NEW: Add the missing monitoredEquipment relationship
+    public function monitoredEquipment()
+    {
+        return $this->hasMany(MonitoredEquipment::class);
+    }
+
+    // NEW: Equipment requests for this project
+    public function equipmentRequests()
+    {
+        return $this->hasMany(EquipmentRequest::class);
+    }
+
+    
+
     public function clients(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'project_clients', 'project_id', 'client_id')

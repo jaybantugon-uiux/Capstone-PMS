@@ -16,6 +16,9 @@
                     <a href="{{ route('admin.progress-reports.create') }}" class="btn btn-info">
                         <i class="fas fa-file-alt"></i> New Progress Report
                     </a>
+                    <a href="{{ route('admin.equipment-monitoring.create-request') }}" class="btn btn-warning">
+                        <i class="fas fa-hammer"></i> Request Equipment
+                    </a>
                 </div>
             </div>
 
@@ -77,6 +80,167 @@
                                 <div class="align-self-center">
                                     <i class="fas fa-exclamation-triangle fa-2x"></i>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW: Admin Equipment Monitoring Card -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-title text-dark mb-2">
+                                        <i class="fas fa-screwdriver-wrench me-2"></i>My Equipment Monitoring
+                                    </h5>
+                                    <p class="text-muted mb-0">Manage your personal and project equipment requests</p>
+                                </div>
+                                <div class="text-dark">
+                                    <i class="fas fa-user-cog fa-3x opacity-75"></i>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-primary mb-1">{{ $adminEquipmentStats['total_equipment'] ?? 0 }}</h5>
+                                        <small class="text-muted">My Equipment</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-warning mb-1">{{ $adminEquipmentStats['pending_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Pending Requests</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-success mb-1">{{ $adminEquipmentStats['approved_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Approved</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-danger mb-1">{{ $adminEquipmentStats['overdue_maintenance'] ?? 0 }}</h5>
+                                        <small class="text-muted">Overdue Maintenance</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Alert for Urgent Items -->
+                            @if(($adminEquipmentStats['overdue_maintenance'] ?? 0) > 0)
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>{{ $adminEquipmentStats['overdue_maintenance'] }}</strong> maintenance tasks are overdue for your equipment.
+                                </div>
+                            @endif
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ route('admin.equipment-monitoring.my-dashboard') }}" class="btn btn-dark btn-sm">
+                                    <i class="fas fa-gauge me-1"></i>My Dashboard
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.create-request') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus me-1"></i>New Request
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.my-equipment') }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-cubes me-1"></i>My Equipment
+                                    <span class="badge bg-info ms-1">{{ $adminEquipmentStats['total_equipment'] ?? 0 }}</span>
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.my-maintenance') }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-wrench me-1"></i>My Maintenance
+                                    @if(($adminEquipmentStats['overdue_maintenance'] ?? 0) > 0)
+                                        <span class="badge bg-danger ms-1">{{ $adminEquipmentStats['overdue_maintenance'] }}</span>
+                                    @endif
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Monitoring Management Card -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-title text-dark mb-2">
+                                        <i class="fas fa-screwdriver-wrench me-2"></i>Equipment Monitoring Management
+                                    </h5>
+                                    <p class="text-muted mb-0">Approve requests, track monitored equipment, and manage maintenance</p>
+                                </div>
+                                <div class="text-dark">
+                                    <i class="fas fa-cogs fa-3x opacity-75"></i>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-primary mb-1">{{ $equipmentMonitoringStats['total_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Total Requests</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-warning mb-1">{{ $equipmentMonitoringStats['pending_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Pending</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-success mb-1">{{ $equipmentMonitoringStats['approved_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Approved</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-danger mb-1">{{ $equipmentMonitoringStats['maintenance_overdue'] ?? 0 }}</h5>
+                                        <small class="text-muted">Overdue Maintenance</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Alert for Urgent Items -->
+                            @if(($equipmentMonitoringStats['urgent_requests'] ?? 0) > 0 || ($equipmentMonitoringStats['maintenance_overdue'] ?? 0) > 0)
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    @if(($equipmentMonitoringStats['urgent_requests'] ?? 0) > 0)
+                                        <strong>{{ $equipmentMonitoringStats['urgent_requests'] }}</strong> urgent equipment requests need attention.
+                                    @endif
+                                    @if(($equipmentMonitoringStats['maintenance_overdue'] ?? 0) > 0)
+                                        <strong>{{ $equipmentMonitoringStats['maintenance_overdue'] }}</strong> maintenance tasks are overdue.
+                                    @endif
+                                </div>
+                            @endif
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ route('admin.equipment-monitoring.index') }}" class="btn btn-dark btn-sm">
+                                    <i class="fas fa-gauge me-1"></i>Management Dashboard
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.requests') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-clipboard-list me-1"></i>All Requests
+                                    @if(($equipmentMonitoringStats['pending_requests'] ?? 0) > 0)
+                                        <span class="badge bg-warning text-dark ms-1">{{ $equipmentMonitoringStats['pending_requests'] }}</span>
+                                    @endif
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.equipment-list') }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-cubes me-1"></i>All Equipment
+                                    <span class="badge bg-info ms-1">{{ $equipmentMonitoringStats['total_equipment'] ?? 0 }}</span>
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.maintenance-list') }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-wrench me-1"></i>All Maintenance
+                                    @if(($equipmentMonitoringStats['maintenance_overdue'] ?? 0) > 0)
+                                        <span class="badge bg-danger ms-1">{{ $equipmentMonitoringStats['maintenance_overdue'] }}</span>
+                                    @endif
+                                </a>
+                                <a href="{{ route('admin.equipment-monitoring.report-equipment-status') }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-download me-1"></i>Export Status CSV
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -158,235 +322,6 @@
                                         <i class="fas fa-camera me-2"></i>Site Photos Management
                                     </h5>
                                     <p class="text-muted mb-0">Review and manage photo submissions from site coordinators</p>
-                                </div>
-                                <div class="text-success">
-                                    <i class="fas fa-images fa-3x opacity-75"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Site Photos Statistics -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-primary mb-1">{{ $sitePhotosStats['total'] ?? 0 }}</h5>
-                                        <small class="text-muted">Total Photos</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-warning mb-1">{{ $sitePhotosStats['submitted'] ?? 0 }}</h5>
-                                        <small class="text-muted">Pending Review</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-success mb-1">{{ $sitePhotosStats['approved'] ?? 0 }}</h5>
-                                        <small class="text-muted">Approved</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-info mb-1">{{ $sitePhotosStats['featured'] ?? 0 }}</h5>
-                                        <small class="text-muted">Featured</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            @if(($sitePhotosStats['overdue_reviews'] ?? 0) > 0)
-                                <div class="alert alert-warning mb-3">
-                                    <i class="fas fa-clock me-2"></i>
-                                    <strong>{{ $sitePhotosStats['overdue_reviews'] }}</strong> photos are overdue for review (submitted >3 days ago)
-                                </div>
-                            @endif
-                            
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('admin.site-photos.index') }}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-images me-1"></i>View All Photos
-                                </a>
-                                <a href="{{ route('admin.site-photos.index', ['status' => 'submitted']) }}" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-clock me-1"></i>Pending Review
-                                </a>
-                                <a href="{{ route('admin.site-photos.index', ['featured' => '1']) }}" class="btn btn-outline-info btn-sm">
-                                    <i class="fas fa-star me-1"></i>Featured Photos
-                                </a>
-                                <a href="{{ route('admin.site-photos.export') }}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-download me-1"></i>Export CSV
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Site Issues Management Card -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                    <h5 class="card-title text-danger mb-2">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>Site Issues Management
-                                    </h5>
-                                    <p class="text-muted mb-0">Monitor and resolve site issues reported by coordinators</p>
-                                </div>
-                                <div class="text-danger">
-                                    <i class="fas fa-shield-alt fa-3x opacity-75"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Site Issues Statistics -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-primary mb-1">{{ $siteIssuesStats['total'] ?? 0 }}</h5>
-                                        <small class="text-muted">Total Issues</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-warning mb-1">{{ $siteIssuesStats['open'] ?? 0 }}</h5>
-                                        <small class="text-muted">Open Issues</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-danger mb-1">{{ $siteIssuesStats['critical'] ?? 0 }}</h5>
-                                        <small class="text-muted">Critical Issues</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-info mb-1">{{ $siteIssuesStats['unacknowledged'] ?? 0 }}</h5>
-                                        <small class="text-muted">Unacknowledged</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('admin.site-issues.index') }}" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-list me-1"></i>View All Issues
-                                </a>
-                                <a href="{{ route('admin.site-issues.index', ['status' => 'open']) }}" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-exclamation-circle me-1"></i>Open Issues
-                                </a>
-                                <a href="{{ route('admin.site-issues.index', ['priority' => 'critical']) }}" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-fire me-1"></i>Critical Issues
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Task Reports Management Card -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                    <h5 class="card-title text-primary mb-2">
-                                        <i class="fas fa-clipboard-check me-2"></i>Task Reports Management
-                                    </h5>
-                                    <p class="text-muted mb-0">Monitor and review task progress reports from site coordinators</p>
-                                </div>
-                                <div class="text-primary">
-                                    <i class="fas fa-chart-line fa-3x opacity-75"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Task Reports Statistics -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-primary mb-1">{{ $taskReportsStats['total'] ?? 0 }}</h5>
-                                        <small class="text-muted">Total Reports</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-warning mb-1">{{ $taskReportsStats['pending'] ?? 0 }}</h5>
-                                        <small class="text-muted">Pending Review</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-success mb-1">{{ $taskReportsStats['approved'] ?? 0 }}</h5>
-                                        <small class="text-muted">Approved</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="bg-light p-3 rounded text-center">
-                                        <h5 class="text-danger mb-1">{{ $taskReportsStats['overdue_reviews'] ?? 0 }}</h5>
-                                        <small class="text-muted">Overdue Reviews</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('admin.task-reports.index') }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>View All Reports
-                                </a>
-                                <a href="{{ route('admin.task-reports.index', ['status' => 'pending']) }}" class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-clock me-1"></i>Pending Reviews
-                                </a>
-                                <a href="{{ route('admin.task-reports.export') }}" class="btn btn-outline-success btn-sm">
-                                    <i class="fas fa-download me-1"></i>Export CSV
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Equipment Management and Quick Reports Cards -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title text-primary">
-                                        <i class="fas fa-boxes me-2"></i>Equipment Inventory
-                                    </h5>
-                                    <p class="text-muted mb-3">Manage and monitor equipment stock levels</p>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ route('equipment.index') }}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-list me-1"></i>View All
-                                        </a>
-                                        <a href="{{ route('equipment.create') }}" class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-plus me-1"></i>Add New
-                                        </a>
-                                        <a href="{{ route('equipment.low-stock') }}" class="btn btn-outline-warning btn-sm">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Low Stock
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="text-primary">
-                                    <i class="fas fa-warehouse fa-3x opacity-75"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title text-success">
-                                        <i class="fas fa-chart-line me-2"></i>Quick Reports
-                                    </h5>
-                                    <p class="text-muted mb-3">Generate project and task reports</p>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ route('reports.generate') }}" class="btn btn-success btn-sm">
-                                            <i class="fas fa-file-alt me-1"></i>Generate
-                                        </a>
-                                        <a href="{{ route('reports.view-staff') }}" class="btn btn-outline-success btn-sm">
-                                            <i class="fas fa-users me-1"></i>Staff Report
-                                        </a>
-                                    </div>
                                 </div>
                                 <div class="text-success">
                                     <i class="fas fa-chart-pie fa-3x opacity-75"></i>
@@ -512,9 +447,6 @@
                 </div>
             </div>
 
-            <!-- Rest of the existing sections... (Site Photos, Site Issues, Task Reports, Recent Projects, Overdue Tasks, etc.) -->
-            <!-- [Keep all the existing sections from your original file] -->
-
             <!-- Quick Actions -->
             <div class="row mt-4">
                 <div class="col-md-12">
@@ -564,6 +496,12 @@
                                     <a href="{{ route('equipment.index') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                         <i class="fas fa-boxes fa-2x mb-2"></i>
                                         <span>Equipment</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('admin.equipment-monitoring.my-dashboard') }}" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-hammer fa-2x mb-2"></i>
+                                        <span>My Equipment</span>
                                     </a>
                                 </div>
                                 <div class="col-md-2">

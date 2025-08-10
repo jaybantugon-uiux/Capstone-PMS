@@ -13,8 +13,9 @@ use App\Http\Controllers\TaskReportController;
 use App\Http\Controllers\SiteIssueController;
 use App\Http\Controllers\SitePhotoController;
 use App\Http\Controllers\ProgressReportController;
-use App\Http\Controllers\ClientProjectController; // NEW: Added for client project views
-use App\Http\Controllers\ClientNotificationPreferencesController; // NEW: Added for notification preferences
+use App\Http\Controllers\ClientProjectController; 
+use App\Http\Controllers\ClientNotificationPreferencesController; 
+use App\Http\Controllers\EquipmentMonitoringController; 
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -75,98 +76,173 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('account/edit', [AccountController::class, 'edit'])->name('account.edit');
     Route::post('account/update', [AccountController::class, 'update'])->name('account.update');
 
-    Route::get('/admin-dashboard', function() {
-        // Include site issues and site photos statistics
-        $totalProjects = Project::count();
-        $activeProjects = Project::where('archived', false)->count();
-        $archivedProjects = Project::where('archived', true)->count();
-        $totalTasks = Task::count();
-        $pendingTasks = Task::where('status', 'pending')->count();
-        $inProgressTasks = Task::where('status', 'in_progress')->count();
-        $completedTasks = Task::where('status', 'completed')->count();
-        $overdueTasksCount = Task::where('due_date', '<', now())->where('status', '!=', 'completed')->count();
-        $recentProjects = Project::latest()->take(5)->get();
-        $overdueTasks = Task::where('due_date', '<', now())->where('status', '!=', 'completed')->take(5)->get();
+Route::get('/admin-dashboard', function() {
+    // Include site issues and site photos statistics
+    $totalProjects = Project::count();
+    $activeProjects = Project::where('archived', false)->count();
+    $archivedProjects = Project::where('archived', true)->count();
+    $totalTasks = Task::count();
+    $pendingTasks = Task::where('status', 'pending')->count();
+    $inProgressTasks = Task::where('status', 'in_progress')->count();
+    $completedTasks = Task::where('status', 'completed')->count();
+    $overdueTasksCount = Task::where('due_date', '<', now())->where('status', '!=', 'completed')->count();
+    $recentProjects = Project::latest()->take(5)->get();
+    $overdueTasks = Task::where('due_date', '<', now())->where('status', '!=', 'completed')->take(5)->get();
 
-        // Site Issues Statistics
-        $siteIssuesStats = [
-            'total' => \App\Models\SiteIssue::count(),
-            'open' => \App\Models\SiteIssue::where('status', 'open')->count(),
-            'critical' => \App\Models\SiteIssue::where('priority', 'critical')->whereNotIn('status', ['resolved', 'closed'])->count(),
-            'unacknowledged' => \App\Models\SiteIssue::whereNull('acknowledged_at')->count(),
-        ];
+    // Site Issues Statistics
+    $siteIssuesStats = [
+        'total' => \App\Models\SiteIssue::count(),
+        'open' => \App\Models\SiteIssue::where('status', 'open')->count(),
+        'critical' => \App\Models\SiteIssue::where('priority', 'critical')->whereNotIn('status', ['resolved', 'closed'])->count(),
+        'unacknowledged' => \App\Models\SiteIssue::whereNull('acknowledged_at')->count(),
+    ];
 
-        // Recent Site Issues
-        $recentSiteIssues = \App\Models\SiteIssue::with(['reporter', 'project'])
-            ->latest('reported_at')
-            ->take(5)
-            ->get();
+    // Recent Site Issues
+    $recentSiteIssues = \App\Models\SiteIssue::with(['reporter', 'project'])
+        ->latest('reported_at')
+        ->take(5)
+        ->get();
 
-        // Task Reports Statistics
-        $taskReportsStats = [
-            'total' => \App\Models\TaskReport::count(),
-            'pending' => \App\Models\TaskReport::where('review_status', 'pending')->count(),
-            'approved' => \App\Models\TaskReport::where('review_status', 'approved')->count(),
-            'overdue_reviews' => \App\Models\TaskReport::where('review_status', 'pending')
-                ->where('created_at', '<', now()->subDays(2))->count(),
-        ];
+    // Task Reports Statistics
+    $taskReportsStats = [
+        'total' => \App\Models\TaskReport::count(),
+        'pending' => \App\Models\TaskReport::where('review_status', 'pending')->count(),
+        'approved' => \App\Models\TaskReport::where('review_status', 'approved')->count(),
+        'overdue_reviews' => \App\Models\TaskReport::where('review_status', 'pending')
+            ->where('created_at', '<', now()->subDays(2))->count(),
+    ];
 
-        $recentTaskReports = \App\Models\TaskReport::with(['user', 'task'])
-            ->latest()
-            ->take(5)
-            ->get();
+    $recentTaskReports = \App\Models\TaskReport::with(['user', 'task'])
+        ->latest()
+        ->take(5)
+        ->get();
 
-        // Site Photos Statistics
-        $sitePhotosStats = [
-            'total' => \App\Models\SitePhoto::count(),
-            'submitted' => \App\Models\SitePhoto::where('submission_status', 'submitted')->count(),
-            'approved' => \App\Models\SitePhoto::where('submission_status', 'approved')->count(),
-            'featured' => \App\Models\SitePhoto::where('is_featured', true)->count(),
-            'overdue_reviews' => \App\Models\SitePhoto::where('submission_status', 'submitted')
-                ->where('submitted_at', '<', now()->subDays(3))->count(),
-        ];
+    // Site Photos Statistics
+    $sitePhotosStats = [
+        'total' => \App\Models\SitePhoto::count(),
+        'submitted' => \App\Models\SitePhoto::where('submission_status', 'submitted')->count(),
+        'approved' => \App\Models\SitePhoto::where('submission_status', 'approved')->count(),
+        'featured' => \App\Models\SitePhoto::where('is_featured', true)->count(),
+        'overdue_reviews' => \App\Models\SitePhoto::where('submission_status', 'submitted')
+            ->where('submitted_at', '<', now()->subDays(3))->count(),
+    ];
 
-        // Recent Site Photos
-        $recentSitePhotos = \App\Models\SitePhoto::with(['uploader', 'project'])
-            ->latest('submitted_at')
-            ->take(5)
-            ->get();
+    // Recent Site Photos
+    $recentSitePhotos = \App\Models\SitePhoto::with(['uploader', 'project'])
+        ->latest('submitted_at')
+        ->take(5)
+        ->get();
 
-        // Progress Reports Statistics
-        $progressReportsStats = [
-            'total' => ProgressReport::count(),
-            'sent' => ProgressReport::where('status', 'sent')->count(),
-            'viewed' => ProgressReport::where('status', 'viewed')->count(),
-            'recent' => ProgressReport::where('created_at', '>=', now()->subDays(7))->count(),
-        ];
+    // Progress Reports Statistics
+    $progressReportsStats = [
+        'total' => ProgressReport::count(),
+        'sent' => ProgressReport::where('status', 'sent')->count(),
+        'viewed' => ProgressReport::where('status', 'viewed')->count(),
+        'recent' => ProgressReport::where('created_at', '>=', now()->subDays(7))->count(),
+    ];
 
-        // Recent Progress Reports
-        $recentProgressReports = ProgressReport::with(['client', 'project', 'creator'])
-            ->latest()
-            ->take(5)
-            ->get();
+    // Recent Progress Reports
+    $recentProgressReports = ProgressReport::with(['client', 'project', 'creator'])
+        ->latest()
+        ->take(5)
+        ->get();
 
-        return view('admin.dashboard', compact(
-            'totalProjects',
-            'activeProjects',
-            'archivedProjects',
-            'totalTasks',
-            'pendingTasks',
-            'inProgressTasks',
-            'completedTasks',
-            'overdueTasksCount',
-            'recentProjects',
-            'overdueTasks',
-            'siteIssuesStats',
-            'recentSiteIssues',
-            'taskReportsStats',
-            'recentTaskReports',
-            'sitePhotosStats',
-            'recentSitePhotos',
-            'progressReportsStats',
-            'recentProgressReports'
-        ));
-    })->middleware('role:admin')->name('admin.dashboard');
+    // ====================================================================
+    // ADMIN PERSONAL EQUIPMENT STATISTICS (Like Site Coordinator)
+    // ====================================================================
+    
+    $user = auth()->user();
+    
+    // Admin's personal equipment statistics
+    $adminEquipmentStats = [
+        // Admin's own equipment requests
+        'pending_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)
+            ->where('status', 'pending')->count(),
+        'approved_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)
+            ->where('status', 'approved')->count(),
+        'declined_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)
+            ->where('status', 'declined')->count(),
+        
+        // Admin's own equipment
+        'total_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->count(),
+        'active_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)
+            ->where('status', 'active')->count(),
+        'personal_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)
+            ->where('usage_type', 'personal')->count(),
+        'project_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)
+            ->where('usage_type', 'project_site')->count(),
+        
+        // Admin's maintenance tasks
+        'scheduled_maintenance' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->where('status', 'scheduled')->count(),
+        'overdue_maintenance' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->where('status', 'scheduled')->where('scheduled_date', '<', now())->count(),
+    ];
+
+    // ====================================================================
+    // EQUIPMENT MONITORING MANAGEMENT STATISTICS (System-wide)
+    // ====================================================================
+    
+    // Equipment Monitoring Statistics - Fixed calculations
+    $equipmentMonitoringStats = [
+        // Equipment Request Statistics
+        'total_requests' => \App\Models\EquipmentRequest::count(),
+        'pending_requests' => \App\Models\EquipmentRequest::where('status', 'pending')->count(),
+        'approved_requests' => \App\Models\EquipmentRequest::where('status', 'approved')->count(),
+        'declined_requests' => \App\Models\EquipmentRequest::where('status', 'declined')->count(),
+        
+        // Monitored Equipment Statistics
+        'total_equipment' => \App\Models\MonitoredEquipment::count(),
+        'active_equipment' => \App\Models\MonitoredEquipment::where('status', 'active')->count(),
+        'pending_equipment' => \App\Models\MonitoredEquipment::where('status', 'pending_approval')->count(),
+        'personal_equipment' => \App\Models\MonitoredEquipment::where('usage_type', 'personal')->count(),
+        'project_equipment' => \App\Models\MonitoredEquipment::where('usage_type', 'project_site')->count(),
+        
+        // Maintenance Statistics
+        'maintenance_scheduled' => \App\Models\EquipmentMaintenance::where('status', 'scheduled')->count(),
+        'maintenance_overdue' => \App\Models\EquipmentMaintenance::where('status', 'scheduled')
+            ->where('scheduled_date', '<', now())->count(),
+        'maintenance_completed' => \App\Models\EquipmentMaintenance::where('status', 'completed')->count(),
+        'maintenance_this_week' => \App\Models\EquipmentMaintenance::where('status', 'scheduled')
+            ->whereBetween('scheduled_date', [now(), now()->addDays(7)])->count(),
+            
+        // Equipment Status Breakdown
+        'equipment_available' => \App\Models\MonitoredEquipment::where('availability_status', 'available')->count(),
+        'equipment_in_use' => \App\Models\MonitoredEquipment::where('availability_status', 'in_use')->count(),
+        'equipment_maintenance' => \App\Models\MonitoredEquipment::where('availability_status', 'maintenance')->count(),
+        'equipment_out_of_order' => \App\Models\MonitoredEquipment::where('availability_status', 'out_of_order')->count(),
+        
+        // Recent activity
+        'recent_requests' => \App\Models\EquipmentRequest::where('created_at', '>=', now()->subDays(7))->count(),
+        'urgent_requests' => \App\Models\EquipmentRequest::where('status', 'pending')
+            ->whereIn('urgency_level', ['high', 'critical'])->count(),
+    ];
+
+    return view('admin.dashboard', compact(
+        'totalProjects',
+        'activeProjects',
+        'archivedProjects',
+        'totalTasks',
+        'pendingTasks',
+        'inProgressTasks',
+        'completedTasks',
+        'overdueTasksCount',
+        'recentProjects',
+        'overdueTasks',
+        'siteIssuesStats',
+        'recentSiteIssues',
+        'taskReportsStats',
+        'recentTaskReports',
+        'sitePhotosStats',
+        'recentSitePhotos',
+        'progressReportsStats',
+        'recentProgressReports',
+        'equipmentMonitoringStats',
+        'adminEquipmentStats'  
+    ));
+})->middleware('role:admin')->name('admin.dashboard');
     
     Route::get('/employee-dashboard', function() { 
         return view('employee.dashboard'); 
@@ -179,98 +255,194 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pm-dashboard', [DashboardController::class, 'pmDashboard'])
     ->middleware('role:pm')->name('pm.dashboard');
     
-    Route::get('/sc-dashboard', function() {
-        $user = auth()->user();
+Route::get('/sc-dashboard', function() {
+    $user = auth()->user();
+    
+    // Existing statistics
+    $totalTasks = Task::where('assigned_to', $user->id)->count();
+    $pendingTasks = Task::where('assigned_to', $user->id)->where('status', 'pending')->count();
+    $inProgressTasks = Task::where('assigned_to', $user->id)->where('status', 'in_progress')->count();
+    $completedTasks = Task::where('assigned_to', $user->id)->where('status', 'completed')->count();
+    
+    $projects = Project::whereHas('tasks', function($query) use ($user) {
+        $query->where('assigned_to', $user->id);
+    })->withCount(['tasks' => function($query) use ($user) {
+        $query->where('assigned_to', $user->id);
+    }])->get();
+    
+    $tasks = Task::where('assigned_to', $user->id)
+        ->with('project')
+        ->latest()
+        ->paginate(10);
+
+    // Site Issues Statistics
+    $siteIssuesStats = [
+        'total' => \App\Models\SiteIssue::where('user_id', $user->id)->count(),
+        'open' => \App\Models\SiteIssue::where('user_id', $user->id)->where('status', 'open')->count(),
+        'critical' => \App\Models\SiteIssue::where('user_id', $user->id)->where('priority', 'critical')->whereNotIn('status', ['resolved', 'closed'])->count(),
+        'resolved' => \App\Models\SiteIssue::where('user_id', $user->id)->where('status', 'resolved')->count(),
+    ];
+
+    // Recent Site Issues
+    $recentSiteIssues = \App\Models\SiteIssue::where('user_id', $user->id)
+        ->with('project')
+        ->latest('reported_at')
+        ->take(5)
+        ->get();
+
+    // Critical Site Issues
+    $criticalSiteIssues = \App\Models\SiteIssue::where('user_id', $user->id)
+        ->where('priority', 'critical')
+        ->whereNotIn('status', ['resolved', 'closed'])
+        ->with('project')
+        ->latest('reported_at')
+        ->get();
+
+    // Task Reports Statistics
+    $reportStats = [
+        'total_reports' => \App\Models\TaskReport::where('user_id', $user->id)->count(),
+        'pending_review' => \App\Models\TaskReport::where('user_id', $user->id)->where('review_status', 'pending')->count(),
+        'approved_reports' => \App\Models\TaskReport::where('user_id', $user->id)->where('review_status', 'approved')->count(),
+        'average_rating' => \App\Models\TaskReport::where('user_id', $user->id)->whereNotNull('admin_rating')->avg('admin_rating'),
+    ];
+
+    // Recent Task Reports
+    $recentReports = \App\Models\TaskReport::where('user_id', $user->id)
+        ->with('task')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Tasks Needing Reports
+    $tasksNeedingReports = Task::where('assigned_to', $user->id)
+        ->where('status', 'in_progress')
+        ->where('archived', false)
+        ->whereDoesntHave('taskReports', function($q) {
+            $q->where('report_date', '>=', now()->subDays(7));
+        })
+        ->with('project')
+        ->take(10)
+        ->get();
+
+    // Site Photos Statistics
+    $sitePhotosStats = [
+        'total' => \App\Models\SitePhoto::where('user_id', $user->id)->count(),
+        'submitted' => \App\Models\SitePhoto::where('user_id', $user->id)->where('submission_status', 'submitted')->count(),
+        'approved' => \App\Models\SitePhoto::where('user_id', $user->id)->where('submission_status', 'approved')->count(),
+        'featured' => \App\Models\SitePhoto::where('user_id', $user->id)->where('is_featured', true)->count(),
+    ];
+
+    // Recent Site Photos
+    $recentSitePhotos = \App\Models\SitePhoto::where('user_id', $user->id)
+        ->with('project')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // ====================================================================
+    // EQUIPMENT MONITORING STATISTICS
+    // ====================================================================
+
+    // Equipment Statistics
+    $equipmentStats = [
+        'total_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->count(),
+        'active_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->where('status', 'active')->count(),
+        'personal_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->where('usage_type', 'personal')->count(),
+        'project_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->where('usage_type', 'project_site')->count(),
+        'maintenance_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->where('availability_status', 'maintenance')->count(),
+        'out_of_order_equipment' => \App\Models\MonitoredEquipment::where('user_id', $user->id)->where('availability_status', 'out_of_order')->count(),
+    ];
+
+    // Equipment Request Statistics
+    $equipmentRequestStats = [
+        'total_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->count(),
+        'pending_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
+        'approved_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->where('status', 'approved')->count(),
+        'declined_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->where('status', 'declined')->count(),
+        'personal_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->where('usage_type', 'personal')->count(),
+        'project_requests' => \App\Models\EquipmentRequest::where('user_id', $user->id)->where('usage_type', 'project_site')->count(),
+    ];
+
+    // Personal Equipment (active)
+    $personalEquipment = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+        ->where('usage_type', 'personal')
+        ->where('status', 'active')
+        ->with(['equipmentRequest'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Project Equipment (active and approved)
+    $projectEquipment = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+        ->where('usage_type', 'project_site')
+        ->where('status', 'active')
+        ->whereHas('equipmentRequest', function($q) {
+            $q->where('status', 'approved');
+        })
+        ->with(['equipmentRequest', 'project'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Pending Equipment Requests
+    $pendingEquipmentRequests = \App\Models\EquipmentRequest::where('user_id', $user->id)
+        ->where('status', 'pending')
+        ->with(['project'])
+        ->orderBy('urgency_level', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Upcoming Maintenance
+    $upcomingMaintenance = \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->where('status', 'scheduled')
+        ->where('scheduled_date', '>=', now())
+        ->where('scheduled_date', '<=', now()->addDays(30))
+        ->with(['monitoredEquipment'])
+        ->orderBy('scheduled_date', 'asc')
+        ->take(5)
+        ->get();
+
+    // Overdue Maintenance Count
+    $overdueMaintenance = \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->where('status', 'scheduled')
+        ->where('scheduled_date', '<', now())
+        ->count();
+
+    // Recent Equipment Requests
+    $recentEquipmentRequests = \App\Models\EquipmentRequest::where('user_id', $user->id)
+        ->with(['monitoredEquipment', 'project'])
+        ->orderBy('created_at', 'desc')
+        ->take(10)
+        ->get();
+
+    // Equipment needing attention (maintenance due, out of order, etc.)
+    $equipmentNeedingAttention = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+        ->where('status', 'active')
+        ->where(function($query) {
+            $query->where('availability_status', 'out_of_order')
+                  ->orWhere('availability_status', 'maintenance')
+                  ->orWhere('next_maintenance_date', '<=', now()->addDays(7));
+        })
+        ->with(['project'])
+        ->get();
+
+    return view('sc.dashboard', compact(
+        // Existing variables
+        'totalTasks', 'pendingTasks', 'inProgressTasks', 'completedTasks',
+        'projects', 'tasks', 
+        'siteIssuesStats', 'recentSiteIssues', 'criticalSiteIssues',
+        'reportStats', 'recentReports', 'tasksNeedingReports',
+        'sitePhotosStats', 'recentSitePhotos',
         
-        // Existing statistics
-        $totalTasks = Task::where('assigned_to', $user->id)->count();
-        $pendingTasks = Task::where('assigned_to', $user->id)->where('status', 'pending')->count();
-        $inProgressTasks = Task::where('assigned_to', $user->id)->where('status', 'in_progress')->count();
-        $completedTasks = Task::where('assigned_to', $user->id)->where('status', 'completed')->count();
-        
-        $projects = Project::whereHas('tasks', function($query) use ($user) {
-            $query->where('assigned_to', $user->id);
-        })->withCount(['tasks' => function($query) use ($user) {
-            $query->where('assigned_to', $user->id);
-        }])->get();
-        
-        $tasks = Task::where('assigned_to', $user->id)
-            ->with('project')
-            ->latest()
-            ->paginate(10);
-
-        // Site Issues Statistics
-        $siteIssuesStats = [
-            'total' => \App\Models\SiteIssue::where('user_id', $user->id)->count(),
-            'open' => \App\Models\SiteIssue::where('user_id', $user->id)->where('status', 'open')->count(),
-            'critical' => \App\Models\SiteIssue::where('user_id', $user->id)->where('priority', 'critical')->whereNotIn('status', ['resolved', 'closed'])->count(),
-            'resolved' => \App\Models\SiteIssue::where('user_id', $user->id)->where('status', 'resolved')->count(),
-        ];
-
-        // Recent Site Issues
-        $recentSiteIssues = \App\Models\SiteIssue::where('user_id', $user->id)
-            ->with('project')
-            ->latest('reported_at')
-            ->take(5)
-            ->get();
-
-        // Critical Site Issues
-        $criticalSiteIssues = \App\Models\SiteIssue::where('user_id', $user->id)
-            ->where('priority', 'critical')
-            ->whereNotIn('status', ['resolved', 'closed'])
-            ->with('project')
-            ->latest('reported_at')
-            ->get();
-
-        // Task Reports Statistics
-        $reportStats = [
-            'total_reports' => \App\Models\TaskReport::where('user_id', $user->id)->count(),
-            'pending_review' => \App\Models\TaskReport::where('user_id', $user->id)->where('review_status', 'pending')->count(),
-            'approved_reports' => \App\Models\TaskReport::where('user_id', $user->id)->where('review_status', 'approved')->count(),
-            'average_rating' => \App\Models\TaskReport::where('user_id', $user->id)->whereNotNull('admin_rating')->avg('admin_rating'),
-        ];
-
-        // Recent Task Reports
-        $recentReports = \App\Models\TaskReport::where('user_id', $user->id)
-            ->with('task')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // Tasks Needing Reports
-        $tasksNeedingReports = Task::where('assigned_to', $user->id)
-            ->where('status', 'in_progress')
-            ->where('archived', false)
-            ->whereDoesntHave('taskReports', function($q) {
-                $q->where('report_date', '>=', now()->subDays(7));
-            })
-            ->with('project')
-            ->take(10)
-            ->get();
-
-        // Site Photos Statistics
-        $sitePhotosStats = [
-            'total' => \App\Models\SitePhoto::where('user_id', $user->id)->count(),
-            'submitted' => \App\Models\SitePhoto::where('user_id', $user->id)->where('submission_status', 'submitted')->count(),
-            'approved' => \App\Models\SitePhoto::where('user_id', $user->id)->where('submission_status', 'approved')->count(),
-            'featured' => \App\Models\SitePhoto::where('user_id', $user->id)->where('is_featured', true)->count(),
-        ];
-
-        // Recent Site Photos
-        $recentSitePhotos = \App\Models\SitePhoto::where('user_id', $user->id)
-            ->with('project')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return view('sc.dashboard', compact(
-            'totalTasks', 'pendingTasks', 'inProgressTasks', 'completedTasks',
-            'projects', 'tasks', 
-            'siteIssuesStats', 'recentSiteIssues', 'criticalSiteIssues',
-            'reportStats', 'recentReports', 'tasksNeedingReports',
-            'sitePhotosStats', 'recentSitePhotos'
-        ));
-    })->middleware('role:sc')->name('sc.dashboard');
+        // Equipment monitoring variables
+        'equipmentStats', 'equipmentRequestStats',
+        'personalEquipment', 'projectEquipment',
+        'pendingEquipmentRequests', 'upcomingMaintenance', 'overdueMaintenance',
+        'recentEquipmentRequests', 'equipmentNeedingAttention'
+    ));
+})->middleware('role:sc')->name('sc.dashboard');
     
     // Client dashboard with progress reports
     Route::get('/client-dashboard', function() {
@@ -1456,6 +1628,597 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('photos.show');
     });
 });
+
+// ====================================================================
+// EQUIPMENT MONITORING ROUTES 
+// ====================================================================
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // ====================================================================
+    // ADMIN EQUIPMENT MONITORING ROUTES
+    // ====================================================================
+Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('equipment-monitoring')->name('equipment-monitoring.')->group(function () {
+        
+        // Main personal equipment dashboard 
+        Route::get('/my-dashboard', [EquipmentMonitoringController::class, 'adminMyDashboard'])->name('my-dashboard');
+        // Create new equipment request
+        Route::get('/create-request', [EquipmentMonitoringController::class, 'adminCreateRequest'])->name('create-request');
+        // Store equipment request 
+        Route::post('/requests', [EquipmentMonitoringController::class, 'adminStoreRequest'])->name('store-request');
+        // View all admin's equipment requests 
+        Route::get('/my-requests', [EquipmentMonitoringController::class, 'adminMyRequests'])->name('my-requests');
+        // Show specific equipment request
+        Route::get('/my-requests/{equipmentRequest}', function(App\Models\EquipmentRequest $equipmentRequest) {
+            // Verify ownership - admin can only view their own requests
+            if ($equipmentRequest->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentRequest->load(['monitoredEquipment', 'project', 'approvedBy']);
+            return view('admin.equipment-monitoring.show-my-request', compact('equipmentRequest'));
+        })->name('show-my-request');
+        
+        // ============================================================
+        // ADMIN EQUIPMENT MANAGEMENT (Personal Equipment)
+        // ============================================================
+
+        Route::get('/my-equipment', [EquipmentMonitoringController::class, 'adminMyEquipment'])->name('my-equipment');
+        Route::get('/my-equipment/{monitoredEquipment}', function(App\Models\MonitoredEquipment $monitoredEquipment) {
+            // Verify ownership - admin can only view their own equipment
+            if ($monitoredEquipment->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $monitoredEquipment->load(['project', 'equipmentRequest', 'maintenanceSchedules']);
+            return view('admin.equipment-monitoring.show-my-equipment', compact('monitoredEquipment'));
+        })->name('show-my-equipment');
+        
+        // Update equipment availability status (mirrors sc.equipment-monitoring.update-availability)
+        Route::post('/my-equipment/{monitoredEquipment}/availability', [EquipmentMonitoringController::class, 'adminUpdateAvailability'])->name('update-my-availability');
+        
+        // ============================================================
+        // ADMIN MAINTENANCE MANAGEMENT (Personal Equipment)
+        // ============================================================
+        Route::get('/my-maintenance', [EquipmentMonitoringController::class, 'adminMyMaintenance'])->name('my-maintenance');
+        Route::get('/create-maintenance', [EquipmentMonitoringController::class, 'adminCreateMaintenance'])->name('create-maintenance');
+        Route::post('/maintenance', [EquipmentMonitoringController::class, 'adminStoreMaintenance'])->name('store-maintenance');
+        Route::get('/my-maintenance/{equipmentMaintenance}', function(App\Models\EquipmentMaintenance $equipmentMaintenance) {
+            // Verify ownership through equipment
+            if ($equipmentMaintenance->monitoredEquipment->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentMaintenance->load(['monitoredEquipment.project', 'performedBy']);
+            return view('admin.equipment-monitoring.show-my-maintenance', compact('equipmentMaintenance'));
+        })->name('show-my-maintenance');
+        
+        // ============================================================
+        // AJAX ENDPOINTS FOR ADMIN PERSONAL EQUIPMENT
+        // ============================================================
+        
+        // Get admin's equipment for specific project (mirrors sc.equipment-monitoring.ajax.project-equipment)
+        Route::get('/ajax/my-project-equipment', function(Illuminate\Http\Request $request) {
+            $projectId = $request->get('project_id');
+            $user = auth()->user();
+            
+            if (!$projectId) {
+                return response()->json(['error' => 'Project ID required'], 400);
+            }
+            
+            // Admin has access to all projects, so no need to verify access
+            $equipment = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+                ->where('project_id', $projectId)
+                ->where('status', 'active')
+                ->get(['id', 'equipment_name', 'availability_status']);
+                
+            return response()->json($equipment);
+        })->name('ajax.my-project-equipment');
+
+        // ============================================================
+        // SYSTEM-WIDE EQUIPMENT MONITORING MANAGEMENT (Admin Only)
+        // ============================================================
+              
+        // Main admin management dashboard for all equipment 
+        Route::get('/', [EquipmentMonitoringController::class, 'adminIndex'])->name('index');
+        
+        // Equipment requests management 
+        Route::get('/requests', [EquipmentMonitoringController::class, 'adminIndex'])->name('requests');
+        Route::get('/requests/{equipmentRequest}', [EquipmentMonitoringController::class, 'adminShowRequest'])->name('show-request');
+        Route::post('/requests/{equipmentRequest}/approve', [EquipmentMonitoringController::class, 'approveRequest'])->name('approve-request');
+        Route::post('/requests/{equipmentRequest}/decline', [EquipmentMonitoringController::class, 'declineRequest'])->name('decline-request');
+        
+        // System-wide equipment management
+        Route::get('/equipment', [EquipmentMonitoringController::class, 'adminEquipmentList'])->name('equipment-list');
+        Route::get('/equipment/{monitoredEquipment}', function(App\Models\MonitoredEquipment $monitoredEquipment) {
+            $monitoredEquipment->load(['user', 'project', 'equipmentRequest', 'maintenanceSchedules']);
+            return view('admin.equipment-monitoring.show-equipment', compact('monitoredEquipment'));
+        })->name('show-equipment');
+        
+        // System-wide maintenance management 
+        Route::get('/maintenance', [EquipmentMonitoringController::class, 'adminMaintenanceList'])->name('maintenance-list');
+        Route::get('/maintenance/{equipmentMaintenance}', function(App\Models\EquipmentMaintenance $equipmentMaintenance) {
+            $equipmentMaintenance->load(['monitoredEquipment.user', 'monitoredEquipment.project', 'performedBy']);
+            return view('admin.equipment-monitoring.show-maintenance', compact('equipmentMaintenance'));
+        })->name('show-maintenance');
+        
+        // System-wide maintenance status updates
+        Route::post('/maintenance/{equipmentMaintenance}/complete', function(App\Models\EquipmentMaintenance $equipmentMaintenance, Illuminate\Http\Request $request) {
+            $request->validate([
+                'actual_duration' => 'nullable|integer|min:1|max:480',
+                'cost' => 'nullable|numeric|min:0|max:999999.99',
+                'completion_notes' => 'nullable|string|max:1000',
+            ]);
+            
+            $equipmentMaintenance->markAsCompleted(
+                auth()->id(),
+                $request->actual_duration,
+                $request->cost,
+                $request->completion_notes
+            );
+            
+            return back()->with('success', 'Maintenance marked as completed successfully.');
+        })->name('complete-maintenance');
+        
+        Route::post('/maintenance/{equipmentMaintenance}/cancel', function(App\Models\EquipmentMaintenance $equipmentMaintenance, Illuminate\Http\Request $request) {
+            $request->validate([
+                'cancel_reason' => 'required|string|max:500',
+            ]);
+            
+            $equipmentMaintenance->cancel($request->cancel_reason);
+            
+            return back()->with('success', 'Maintenance cancelled successfully.');
+        })->name('cancel-maintenance');
+        
+        // Bulk operations 
+        Route::post('/requests/bulk-action', function(Illuminate\Http\Request $request) {
+            $request->validate([
+                'action' => 'required|in:approve,decline',
+                'request_ids' => 'required|array',
+                'request_ids.*' => 'exists:equipment_requests,id',
+                'bulk_notes' => 'nullable|string|max:1000',
+                'bulk_decline_reason' => 'required_if:action,decline|string|max:1000',
+            ]);
+            
+            $requests = \App\Models\EquipmentRequest::whereIn('id', $request->request_ids)
+                ->where('status', 'pending')
+                ->get();
+            
+            $successCount = 0;
+            foreach ($requests as $equipmentRequest) {
+                try {
+                    if ($request->action === 'approve') {
+                        $equipmentRequest->update([
+                            'status' => 'approved',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                            'admin_notes' => $request->bulk_notes,
+                        ]);
+                        
+                        if ($equipmentRequest->monitoredEquipment) {
+                            $equipmentRequest->monitoredEquipment->update(['status' => 'active']);
+                        }
+                        
+                        $equipmentRequest->user->notify(new \App\Notifications\EquipmentRequestApproved($equipmentRequest));
+                    } else {
+                        $equipmentRequest->update([
+                            'status' => 'declined',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                            'decline_reason' => $request->bulk_decline_reason,
+                        ]);
+                        
+                        if ($equipmentRequest->monitoredEquipment) {
+                            $equipmentRequest->monitoredEquipment->update(['status' => 'declined']);
+                        }
+                        
+                        $equipmentRequest->user->notify(new \App\Notifications\EquipmentRequestDeclined($equipmentRequest));
+                    }
+                    $successCount++;
+                } catch (\Exception $e) {
+                    Log::error('Bulk action failed for request ' . $equipmentRequest->id, ['error' => $e->getMessage()]);
+                }
+            }
+            
+            $action = $request->action === 'approve' ? 'approved' : 'declined';
+            return back()->with('success', "{$successCount} equipment requests {$action} successfully.");
+        })->name('bulk-action');
+        
+        // Reports and exports 
+        Route::get('/reports/equipment-status', function(Illuminate\Http\Request $request) {
+            $statusFilter = $request->get('status');
+            $typeFilter = $request->get('usage_type');
+            $dateFrom = $request->get('date_from');
+            $dateTo = $request->get('date_to');
+            
+            $query = \App\Models\MonitoredEquipment::with(['user', 'project', 'equipmentRequest']);
+            
+            if ($statusFilter) $query->where('status', $statusFilter);
+            if ($typeFilter) $query->where('usage_type', $typeFilter);
+            if ($dateFrom) $query->whereDate('created_at', '>=', $dateFrom);
+            if ($dateTo) $query->whereDate('created_at', '<=', $dateTo);
+            
+            $equipment = $query->orderBy('created_at', 'desc')->get();
+            
+            if ($request->get('export') === 'csv') {
+                $filename = 'equipment_status_report_' . date('Y-m-d_H-i-s') . '.csv';
+                
+                $headers = [
+                    'Content-Type' => 'text/csv',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                ];
+                
+                $callback = function() use ($equipment) {
+                    $file = fopen('php://output', 'w');
+                    fputcsv($file, [
+                        'Equipment Name', 'Site Coordinator', 'Usage Type', 'Project', 
+                        'Status', 'Availability', 'Quantity', 'Location', 'Created Date'
+                    ]);
+                    
+                    foreach ($equipment as $item) {
+                        fputcsv($file, [
+                            $item->equipment_name,
+                            $item->user->full_name,
+                            $item->formatted_usage_type,
+                            $item->project ? $item->project->name : 'N/A',
+                            ucfirst($item->status),
+                            ucfirst($item->availability_status),
+                            $item->quantity,
+                            $item->location ?: 'Not specified',
+                            $item->created_at->format('M d, Y'),
+                        ]);
+                    }
+                    fclose($file);
+                };
+                
+                return response()->stream($callback, 200, $headers);
+            }
+            
+            return view('admin.equipment-monitoring.reports.equipment-status', compact(
+                'equipment', 'statusFilter', 'typeFilter', 'dateFrom', 'dateTo'
+            ));
+        })->name('report-equipment-status');
+    });
+});
+    
+    // ====================================================================
+    // SITE COORDINATOR (SC) EQUIPMENT MONITORING ROUTES  
+    // ====================================================================
+    Route::middleware('role:sc')->prefix('sc/equipment-monitoring')->name('sc.')->group(function () {
+        Route::prefix('equipment-monitoring')->name('equipment-monitoring.')->group(function () {
+        // Main SC dashboard
+        Route::get('/', [EquipmentMonitoringController::class, 'scIndex'])->name('index');
+        
+        // Equipment requests
+        Route::get('/requests', [EquipmentMonitoringController::class, 'scRequests'])->name('requests');
+        Route::get('/requests/create', [EquipmentMonitoringController::class, 'scCreateRequest'])->name('create-request');
+        Route::post('/requests', [EquipmentMonitoringController::class, 'scStoreRequest'])->name('store-request');
+        Route::get('/requests/{equipmentRequest}', function(App\Models\EquipmentRequest $equipmentRequest) {
+            // Verify ownership
+            if ($equipmentRequest->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentRequest->load(['monitoredEquipment', 'project', 'approvedBy']);
+            return view('sc.equipment-monitoring.show-request', compact('equipmentRequest'));
+        })->name('show-request');
+        
+        // Equipment management
+        Route::get('/equipment', function(Illuminate\Http\Request $request) {
+            $user = auth()->user();
+            $statusFilter = $request->get('status');
+            $typeFilter = $request->get('usage_type');
+            
+            $equipmentQuery = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+                ->with(['project', 'equipmentRequest'])
+                ->orderBy('created_at', 'desc');
+                
+            if ($statusFilter) $equipmentQuery->where('status', $statusFilter);
+            if ($typeFilter) $equipmentQuery->where('usage_type', $typeFilter);
+            
+            $equipment = $equipmentQuery->paginate(15);
+            
+            return view('sc.equipment-monitoring.equipment', compact('equipment', 'statusFilter', 'typeFilter'));
+        })->name('equipment');
+        
+        Route::get('/equipment/{monitoredEquipment}', function(App\Models\MonitoredEquipment $monitoredEquipment) {
+            // Verify ownership
+            if ($monitoredEquipment->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $monitoredEquipment->load(['project', 'equipmentRequest', 'maintenanceSchedules']);
+            return view('sc.equipment-monitoring.show-equipment', compact('monitoredEquipment'));
+        })->name('show-equipment');
+        
+        // Equipment availability updates
+        Route::post('/equipment/{monitoredEquipment}/availability', [EquipmentMonitoringController::class, 'scUpdateAvailability'])->name('update-availability');
+        
+        // Maintenance scheduling
+        Route::get('/maintenance', [EquipmentMonitoringController::class, 'scMaintenance'])->name('maintenance');
+        Route::get('/maintenance/create', [EquipmentMonitoringController::class, 'scCreateMaintenance'])->name('create-maintenance');
+        Route::post('/maintenance', [EquipmentMonitoringController::class, 'scStoreMaintenance'])->name('store-maintenance');
+        
+        Route::get('/maintenance/{equipmentMaintenance}', function(App\Models\EquipmentMaintenance $equipmentMaintenance) {
+            // Verify ownership through equipment
+            if ($equipmentMaintenance->monitoredEquipment->user_id !== auth()->id()) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentMaintenance->load(['monitoredEquipment.project', 'performedBy']);
+            return view('sc.equipment-monitoring.show-maintenance', compact('equipmentMaintenance'));
+        })->name('show-maintenance');
+        
+        // AJAX endpoints
+        Route::get('/ajax/project-equipment', function(Illuminate\Http\Request $request) {
+            $projectId = $request->get('project_id');
+            $user = auth()->user();
+            
+            if (!$projectId) {
+                return response()->json(['error' => 'Project ID required'], 400);
+            }
+            
+            // Verify SC has access to this project
+            $hasAccess = Task::where('assigned_to', $user->id)
+                ->where('project_id', $projectId)
+                ->exists();
+                
+            if (!$hasAccess) {
+                return response()->json(['error' => 'Access denied'], 403);
+            }
+            
+            $equipment = \App\Models\MonitoredEquipment::where('user_id', $user->id)
+                ->where('project_id', $projectId)
+                ->where('status', 'active')
+                ->whereHas('equipmentRequest', function($q) {
+                    $q->where('status', 'approved');
+                })
+                ->get(['id', 'equipment_name', 'availability_status']);
+                
+            return response()->json($equipment);
+        })->name('ajax.project-equipment');
+    });
+});
+    
+    // ====================================================================
+    // PROJECT MANAGER (PM) EQUIPMENT MONITORING ROUTES - VIEW ONLY
+    // ====================================================================
+    Route::middleware('role:pm')->prefix('pm/equipment-monitoring')->name('pm.')->group(function () {
+        Route::prefix('equipment-monitoring')->name('equipment-monitoring.')->group(function () {
+        // Main PM dashboard - view only
+        Route::get('/', [EquipmentMonitoringController::class, 'pmIndex'])->name('index');
+        
+        // Equipment lists - view only
+        Route::get('/equipment', [EquipmentMonitoringController::class, 'pmEquipmentList'])->name('equipment-list');
+        Route::get('/equipment/{monitoredEquipment}', function(App\Models\MonitoredEquipment $monitoredEquipment) {
+            $user = auth()->user();
+            $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+            
+            // Verify PM has access to this equipment's project
+            if ($monitoredEquipment->project_id && !in_array($monitoredEquipment->project_id, $managedProjectIds)) {
+                abort(403, 'Access denied.');
+            }
+            
+            $monitoredEquipment->load(['user', 'project', 'equipmentRequest', 'maintenanceSchedules']);
+            return view('pm.equipment-monitoring.show-equipment', compact('monitoredEquipment'));
+        })->name('show-equipment');
+        
+        // Maintenance schedules - view only
+        Route::get('/maintenance', [EquipmentMonitoringController::class, 'pmMaintenanceList'])->name('maintenance-list');
+        Route::get('/maintenance/{equipmentMaintenance}', function(App\Models\EquipmentMaintenance $equipmentMaintenance) {
+            $user = auth()->user();
+            $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+            
+            // Verify PM has access to this maintenance's project
+            if ($equipmentMaintenance->monitoredEquipment->project_id && 
+                !in_array($equipmentMaintenance->monitoredEquipment->project_id, $managedProjectIds)) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentMaintenance->load(['monitoredEquipment.user', 'monitoredEquipment.project', 'performedBy']);
+            return view('pm.equipment-monitoring.show-maintenance', compact('equipmentMaintenance'));
+        })->name('show-maintenance');
+        
+        // Equipment requests - view only
+        Route::get('/requests', function(Illuminate\Http\Request $request) {
+            $user = auth()->user();
+            $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+            
+            $statusFilter = $request->get('status');
+            $projectFilter = $request->get('project_id');
+            
+            $requestsQuery = \App\Models\EquipmentRequest::with(['user', 'project', 'monitoredEquipment'])
+                ->whereIn('project_id', $managedProjectIds)
+                ->orderBy('created_at', 'desc');
+                
+            if ($statusFilter) $requestsQuery->where('status', $statusFilter);
+            if ($projectFilter && in_array($projectFilter, $managedProjectIds)) {
+                $requestsQuery->where('project_id', $projectFilter);
+            }
+            
+            $equipmentRequests = $requestsQuery->paginate(15);
+            $managedProjects = $user->getManagedProjects();
+            
+            return view('pm.equipment-monitoring.requests', compact(
+                'equipmentRequests', 'managedProjects', 'statusFilter', 'projectFilter'
+            ));
+        })->name('requests');
+        
+        Route::get('/requests/{equipmentRequest}', function(App\Models\EquipmentRequest $equipmentRequest) {
+            $user = auth()->user();
+            $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+            
+            // Verify PM has access to this request's project
+            if ($equipmentRequest->project_id && !in_array($equipmentRequest->project_id, $managedProjectIds)) {
+                abort(403, 'Access denied.');
+            }
+            
+            $equipmentRequest->load(['user', 'project', 'monitoredEquipment', 'approvedBy']);
+            return view('pm.equipment-monitoring.show-request', compact('equipmentRequest'));
+        })->name('show-request');
+        
+        // Reports - view only
+        Route::get('/reports/summary', function(Illuminate\Http\Request $request) {
+            $user = auth()->user();
+            $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+            
+            $dateFrom = $request->get('date_from', now()->startOfMonth());
+            $dateTo = $request->get('date_to', now()->endOfMonth());
+            
+            // Get statistics for managed projects
+            $stats = [
+                'total_equipment' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->count(),
+                'active_equipment' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('status', 'active')->count(),
+                'pending_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'pending')->count(),
+                'scheduled_maintenance' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+                    $q->whereIn('project_id', $managedProjectIds);
+                })->where('status', 'scheduled')->count(),
+            ];
+            
+            $managedProjects = $user->getManagedProjects();
+            
+            return view('pm.equipment-monitoring.report-summary', compact('stats', 'managedProjects', 'dateFrom', 'dateTo'));
+        })->name('report-summary');
+
+            // API endpoint for PM dashboard stats (add this to existing PM equipment monitoring routes)
+    Route::get('/api/stats', function() {
+        $user = auth()->user();
+        $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+        
+        return response()->json([
+            // Equipment Request Statistics
+            'total_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->count(),
+            'pending_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'pending')->count(),
+            'approved_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'approved')->count(),
+            'declined_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'declined')->count(),
+            
+            // Monitored Equipment Statistics
+            'total_equipment' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->count(),
+            'active_equipment' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('status', 'active')->count(),
+            'pending_equipment' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('status', 'pending_approval')->count(),
+            'personal_equipment' => \App\Models\MonitoredEquipment::where('usage_type', 'personal')
+                ->whereHas('user.tasks', function($q) use ($managedProjectIds) {
+                    $q->whereIn('project_id', $managedProjectIds);
+                })->count(),
+            
+            // Equipment availability in managed projects
+            'equipment_available' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'available')->count(),
+            'equipment_in_use' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'in_use')->count(),
+            'equipment_maintenance' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'maintenance')->count(),
+            'equipment_out_of_order' => \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'out_of_order')->count(),
+            
+            // Maintenance Statistics
+            'maintenance_scheduled' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+                $q->whereIn('project_id', $managedProjectIds);
+            })->where('status', 'scheduled')->count(),
+            'maintenance_overdue' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+                $q->whereIn('project_id', $managedProjectIds);
+            })->where('status', 'scheduled')->where('scheduled_date', '<', now())->count(),
+            'maintenance_this_week' => \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+                $q->whereIn('project_id', $managedProjectIds);
+            })->where('status', 'scheduled')->whereBetween('scheduled_date', [now(), now()->addDays(7)])->count(),
+            
+            // Recent activity
+            'recent_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('created_at', '>=', now()->subDays(7))->count(),
+            'urgent_requests' => \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'pending')
+                ->whereIn('urgency_level', ['high', 'critical'])->count(),
+        ]);
+    })->name('api.stats');
+    
+    // API endpoint for recent equipment activity
+    Route::get('/api/recent-activity', function() {
+        $user = auth()->user();
+        $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+        
+        $recentRequests = \App\Models\EquipmentRequest::whereIn('project_id', $managedProjectIds)
+            ->with(['user', 'project'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+            
+        $upcomingMaintenance = \App\Models\EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+                $q->whereIn('project_id', $managedProjectIds);
+            })
+            ->where('status', 'scheduled')
+            ->where('scheduled_date', '>=', now())
+            ->where('scheduled_date', '<=', now()->addDays(7))
+            ->with(['monitoredEquipment.user', 'monitoredEquipment.project'])
+            ->orderBy('scheduled_date', 'asc')
+            ->take(5)
+            ->get();
+            
+        return response()->json([
+            'recent_requests' => $recentRequests,
+            'upcoming_maintenance' => $upcomingMaintenance,
+        ]);
+    })->name('api.recent-activity');
+    
+    // API endpoint for equipment needing attention
+    Route::get('/api/attention-needed', function() {
+        $user = auth()->user();
+        $managedProjectIds = $user->getManagedProjects()->pluck('id')->toArray();
+        
+        $equipmentNeedingAttention = \App\Models\MonitoredEquipment::whereIn('project_id', $managedProjectIds)
+            ->where('status', 'active')
+            ->where(function($query) {
+                $query->where('availability_status', 'out_of_order')
+                      ->orWhere('availability_status', 'maintenance')
+                      ->orWhere('next_maintenance_date', '<=', now()->addDays(7));
+            })
+            ->with(['user', 'project'])
+            ->get();
+            
+        return response()->json([
+            'equipment_needing_attention' => $equipmentNeedingAttention,
+            'count' => $equipmentNeedingAttention->count(),
+        ]);
+    })->name('api.attention-needed');
+        });
+    });
+});
+
+    
+    // ====================================================================
+    // SHARED NOTIFICATION ROUTES FOR EQUIPMENT MONITORING
+    // ====================================================================
+    Route::prefix('equipment-monitoring/notifications')->name('equipment-monitoring.notifications.')->group(function () {
+        Route::get('/', function() {
+            $user = auth()->user();
+            $notifications = $user->notifications()
+                ->whereIn('type', [
+                    'App\\Notifications\\EquipmentRequestApproved',
+                    'App\\Notifications\\EquipmentRequestDeclined', 
+                    'App\\Notifications\\MaintenanceReminder',
+                    'App\\Notifications\\MaintenanceCompleted'
+                ])
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+                
+            return view('equipment-monitoring.notifications.index', compact('notifications'));
+        })->name('index');
+        
+        Route::post('/{id}/mark-read', function($id) {
+            $notification = auth()->user()->notifications()->findOrFail($id);
+            $notification->markAsRead();
+            
+            return response()->json(['success' => true]);
+        })->name('mark-read');
+        
+        Route::post('/mark-all-read', function() {
+            auth()->user()->notifications()
+                ->whereIn('type', [
+                    'App\\Notifications\\EquipmentRequestApproved',
+                    'App\\Notifications\\EquipmentRequestDeclined',
+                    'App\\Notifications\\MaintenanceReminder', 
+                    'App\\Notifications\\MaintenanceCompleted'
+                ])
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+                
+            return response()->json(['success' => true]);
+        })->name('mark-all-read');
+    });
 
 if (app()->environment('local')) {
     Route::get('/test-email', [AuthController::class, 'testEmail'])->name('test.email');

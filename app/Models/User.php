@@ -1427,4 +1427,5 @@ public function getRecentActivityAttribute()
                 ->count(),
         ];
 }
+
 }

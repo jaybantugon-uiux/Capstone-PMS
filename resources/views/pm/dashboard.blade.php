@@ -66,7 +66,7 @@
         </div>
     </div>
 
-    <!-- Task Reports Management Card - Enhanced -->
+    <!-- Task Reports Management Card -->
     @if(isset($taskReportsStats) && !empty($taskReportsStats))
     <div class="row mb-4">
         <div class="col-md-12">
@@ -118,15 +118,13 @@
                         </div>
                         <div class="col-md-2">
                             <div class="bg-light p-3 rounded text-center">
-                                <h5 class="text-dark mb-1">{{ number_format($taskReportsStats['approval_rate'] ?? 0, 1) }}%</h5>
+                                <h5 class="text-dark mb-1">{{ isset($taskReportsStats['approved'], $taskReportsStats['total']) && $taskReportsStats['total'] > 0 ? number_format(($taskReportsStats['approved'] / $taskReportsStats['total']) * 100, 1) : 0 }}%</h5>
                                 <small class="text-muted">Approval Rate</small>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Enhanced Action Buttons with All Views -->
                     <div class="d-flex gap-2 flex-wrap">
-                        <!-- Primary Actions -->
                         <a href="{{ route('pm.task-reports.index') }}" class="btn btn-warning">
                             <i class="fas fa-list me-1"></i>All Reports
                         </a>
@@ -137,14 +135,12 @@
                             @endif
                         </a>
                         
-                        <!-- Critical Actions -->
                         @if(isset($taskReportsStats['overdue_reviews']) && $taskReportsStats['overdue_reviews'] > 0)
                             <a href="{{ route('pm.task-reports.index', ['review_status' => 'pending']) }}" class="btn btn-outline-danger">
                                 <i class="fas fa-exclamation-triangle me-1"></i>Overdue ({{ $taskReportsStats['overdue_reviews'] }})
                             </a>
                         @endif
                         
-                        <!-- Management Actions -->
                         <a href="{{ route('pm.task-reports.bulk-approve') }}" class="btn btn-outline-primary">
                             <i class="fas fa-check-double me-1"></i>Bulk Approve
                         </a>
@@ -241,7 +237,7 @@
     </div>
 </div>
 
-    <!-- Site Photos Management Card - NEW -->
+    <!-- Site Photos Management Card -->
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="card border-0 shadow-sm">
@@ -317,6 +313,94 @@
                         </a>
                         <a href="{{ route('pm.site-photos.export') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-download me-1"></i>Export
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         NEW: EQUIPMENT MONITORING MANAGEMENT CARD
+         ==================================================================== -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="card-title text-secondary mb-2">
+                                <i class="fas fa-tools me-2"></i>Equipment Monitoring Management
+                            </h5>
+                            <p class="text-muted mb-0">Monitor and oversee equipment across your managed projects</p>
+                        </div>
+                        <div class="text-secondary">
+                            <i class="fas fa-cogs fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Equipment Monitoring Statistics -->
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-primary mb-1">{{ $equipmentMonitoringStats['total_equipment'] ?? 0 }}</h5>
+                                <small class="text-muted">Total Equipment</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-success mb-1">{{ $equipmentMonitoringStats['active_equipment'] ?? 0 }}</h5>
+                                <small class="text-muted">Active</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-warning mb-1">{{ $equipmentMonitoringStats['pending_requests'] ?? 0 }}</h5>
+                                <small class="text-muted">Pending Requests</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-info mb-1">{{ $equipmentMonitoringStats['equipment_in_use'] ?? 0 }}</h5>
+                                <small class="text-muted">In Use</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-danger mb-1">{{ $equipmentMonitoringStats['maintenance_overdue'] ?? 0 }}</h5>
+                                <small class="text-muted">Maintenance Overdue</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-secondary mb-1">{{ $equipmentMonitoringStats['maintenance_this_week'] ?? 0 }}</h5>
+                                <small class="text-muted">Maintenance This Week</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('pm.equipment-monitoring.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-list me-1"></i>Equipment Overview
+                        </a>
+                        <a href="{{ route('pm.equipment-monitoring.equipment-list') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tools me-1"></i>View Equipment
+                        </a>
+                        @if(isset($equipmentMonitoringStats['pending_requests']) && $equipmentMonitoringStats['pending_requests'] > 0)
+                            <a href="{{ route('pm.equipment-monitoring.requests', ['status' => 'pending']) }}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-clock me-1"></i>Pending Requests ({{ $equipmentMonitoringStats['pending_requests'] }})
+                            </a>
+                        @endif
+                        <a href="{{ route('pm.equipment-monitoring.maintenance-list') }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-wrench me-1"></i>Maintenance Schedule
+                        </a>
+                        @if(isset($equipmentMonitoringStats['maintenance_overdue']) && $equipmentMonitoringStats['maintenance_overdue'] > 0)
+                            <a href="{{ route('pm.equipment-monitoring.maintenance-list', ['status' => 'overdue']) }}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Overdue Maintenance ({{ $equipmentMonitoringStats['maintenance_overdue'] }})
+                            </a>
+                        @endif
+                        <a href="{{ route('pm.equipment-monitoring.report-summary') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-chart-bar me-1"></i>Reports
                         </a>
                     </div>
                 </div>
@@ -481,9 +565,9 @@
         </div>
     </div>
 
-    <!-- Recent Site Issues, Progress Reports, and Site Photos -->
+    <!-- Recent Site Issues, Progress Reports, Site Photos, and Equipment Overview -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-header">
                     <h5>Recent Site Issues</h5>
@@ -538,7 +622,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-header">
                     <h5>Recent Progress Reports</h5>
@@ -590,8 +674,7 @@
             </div>
         </div>
 
-        <!-- NEW: Recent Site Photos -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card">
                 <div class="card-header">
                     <h5>Recent Site Photos</h5>
@@ -655,6 +738,88 @@
                 </div>
             </div>
         </div>
+
+        <!-- NEW: Equipment Overview Card -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Equipment Overview</h5>
+                </div>
+                <div class="card-body">
+                    @if(isset($recentEquipmentRequests) && $recentEquipmentRequests->count() > 0)
+                        @foreach($recentEquipmentRequests->take(4) as $request)
+                            <div class="mb-2 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <a href="{{ route('pm.equipment-monitoring.show-request', $request) }}">{{ Str::limit($request->equipment_name, 20) }}</a>
+                                        </h6>
+                                        <small class="text-muted">
+                                            By {{ $request->user->first_name }} {{ $request->user->last_name }}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ $request->project ? $request->project->name : 'Personal Use' }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-{{ $request->status_badge_color }}">
+                                            {{ $request->formatted_status }}
+                                        </span>
+                                        @if($request->urgency_level === 'critical' || $request->urgency_level === 'high')
+                                            <br>
+                                            <span class="badge bg-{{ $request->urgency_badge_color }} mt-1">
+                                                {{ $request->formatted_urgency }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        {{ $request->created_at->diffForHumans() }}
+                                        @if($request->usage_type === 'project_site')
+                                            <span class="badge bg-info ms-1">Project</span>
+                                        @endif
+                                    </small>
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="text-center mt-2">
+                            <a href="{{ route('pm.equipment-monitoring.requests') }}" class="btn btn-sm btn-outline-secondary">View All Requests</a>
+                        </div>
+                    @else
+                        <div class="text-center py-3">
+                            <i class="fas fa-tools fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-2">No recent equipment requests</p>
+                            <a href="{{ route('pm.equipment-monitoring.index') }}" class="btn btn-sm btn-outline-secondary">View Equipment</a>
+                        </div>
+                    @endif
+
+                    @if(isset($equipmentNeedingAttention) && $equipmentNeedingAttention->count() > 0)
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="text-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Needs Attention
+                            </h6>
+                            @foreach($equipmentNeedingAttention->take(2) as $equipment)
+                                <div class="mb-1">
+                                    <small class="text-muted">
+                                        <strong>{{ Str::limit($equipment->equipment_name, 15) }}</strong><br>
+                                        {{ $equipment->project->name ?? 'Personal' }} - 
+                                        @if($equipment->availability_status === 'out_of_order')
+                                            <span class="text-danger">Out of Order</span>
+                                        @elseif($equipment->availability_status === 'maintenance')
+                                            <span class="text-warning">Under Maintenance</span>
+                                        @elseif($equipment->next_maintenance_date && $equipment->next_maintenance_date <= now()->addDays(7))
+                                            <span class="text-info">Maintenance Due</span>
+                                        @endif
+                                    </small>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Actions -->
@@ -710,6 +875,45 @@
                                 <i class="fas fa-file-chart-line fa-2x mb-2"></i>
                                 <span>New Report</span>
                             </a>
+                        </div>
+                    </div>
+                    <!-- NEW: Second Row for Equipment Monitoring -->
+                    <div class="row mt-3">
+                        <div class="col-md-2">
+                            <a href="{{ route('pm.equipment-monitoring.index') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center position-relative">
+                                <i class="fas fa-tools fa-2x mb-2"></i>
+                                <span>Equipment</span>
+                                @if(isset($equipmentMonitoringStats['pending_requests']) && $equipmentMonitoringStats['pending_requests'] > 0)
+                                    <span class="badge bg-warning position-absolute top-0 end-0 translate-middle">{{ $equipmentMonitoringStats['pending_requests'] }}</span>
+                                @endif
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('pm.equipment-monitoring.maintenance-list') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center position-relative">
+                                <i class="fas fa-wrench fa-2x mb-2"></i>
+                                <span>Maintenance</span>
+                                @if(isset($equipmentMonitoringStats['maintenance_overdue']) && $equipmentMonitoringStats['maintenance_overdue'] > 0)
+                                    <span class="badge bg-danger position-absolute top-0 end-0 translate-middle">{{ $equipmentMonitoringStats['maintenance_overdue'] }}</span>
+                                @endif
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('pm.equipment-monitoring.requests') }}" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center position-relative">
+                                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                                <span>Equipment Requests</span>
+                                @if(isset($equipmentMonitoringStats['urgent_requests']) && $equipmentMonitoringStats['urgent_requests'] > 0)
+                                    <span class="badge bg-danger position-absolute top-0 end-0 translate-middle">{{ $equipmentMonitoringStats['urgent_requests'] }}</span>
+                                @endif
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('pm.equipment-monitoring.report-summary') }}" class="btn btn-outline-dark w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <span>Equipment Reports</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Spacer or additional actions can be added here -->
                         </div>
                     </div>
                 </div>
@@ -780,7 +984,6 @@
         </div>
     @endif
 
-    <!-- NEW: Site Photos Overdue Reviews Alert -->
     @if(isset($sitePhotosStats['overdue_reviews']) && $sitePhotosStats['overdue_reviews'] > 0)
         <div class="row mt-4">
             <div class="col-md-12">
@@ -799,6 +1002,80 @@
                                 <i class="fas fa-check-double me-1"></i>Bulk Approve
                             </a>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- NEW: Equipment Monitoring Alerts -->
+    @if(isset($overdueEquipmentMaintenance) && $overdueEquipmentMaintenance->count() > 0)
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert alert-danger">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-wrench fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>Overdue Equipment Maintenance!</strong><br>
+                            {{ $overdueEquipmentMaintenance->count() }} equipment maintenance schedules are overdue and require immediate attention.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('pm.equipment-monitoring.maintenance-list', ['status' => 'overdue']) }}" class="btn btn-danger btn-sm">
+                                <i class="fas fa-exclamation-triangle me-1"></i>View Overdue
+                            </a>
+                            <a href="{{ route('pm.equipment-monitoring.maintenance-list') }}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-calendar-alt me-1"></i>Full Schedule
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(isset($pendingEquipmentRequests) && $pendingEquipmentRequests->count() > 0)
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert alert-warning">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clipboard-list fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>Pending Equipment Requests for Review!</strong><br>
+                            {{ $pendingEquipmentRequests->count() }} equipment requests from your projects are awaiting admin approval.
+                            @if($pendingEquipmentRequests->where('urgency_level', 'critical')->count() > 0)
+                                <span class="text-danger">({{ $pendingEquipmentRequests->where('urgency_level', 'critical')->count() }} marked as critical)</span>
+                            @endif
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('pm.equipment-monitoring.requests', ['status' => 'pending']) }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-eye me-1"></i>Review Requests
+                            </a>
+                            @if($pendingEquipmentRequests->where('urgency_level', 'critical')->count() > 0)
+                                <a href="{{ route('pm.equipment-monitoring.requests', ['urgency' => 'critical']) }}" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-fire me-1"></i>Critical Only
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(isset($equipmentNeedingAttention) && $equipmentNeedingAttention->count() > 0)
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert alert-secondary">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-tools fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>Equipment Requires Attention!</strong><br>
+                            {{ $equipmentNeedingAttention->count() }} pieces of equipment in your projects need attention 
+                            (maintenance due, out of order, or under maintenance).
+                        </div>
+                        <a href="{{ route('pm.equipment-monitoring.equipment-list', ['needs_attention' => 1]) }}" class="btn btn-secondary btn-sm ms-2">
+                            <i class="fas fa-search me-1"></i>View Equipment
+                        </a>
                     </div>
                 </div>
             </div>
@@ -992,6 +1269,18 @@
 .photo-thumbnail:hover {
     transform: scale(1.05);
 }
+/* NEW: Equipment monitoring specific styles */
+.equipment-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+.equipment-available { background-color: #28a745; }
+.equipment-in-use { background-color: #007bff; }
+.equipment-maintenance { background-color: #ffc107; }
+.equipment-out-of-order { background-color: #dc3545; }
 </style>
 @endpush
 
@@ -1015,18 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             })
-            .catch(error => console.log('Error fetching site issues stats:', error));
-
-        // Refresh task reports stats if available
-        @if(isset($taskReportsStats))
-        fetch('{{ route("pm.task-reports.api.stats") }}')
-            .then(response => response.json())
-            .then(data => {
-                // Update task reports counts in the UI
-                updateStatsDisplay('task-reports', data);
-            })
             .catch(error => console.log('Error fetching task reports stats:', error));
-        @endif
 
         // Refresh site photos stats
         fetch('{{ route("pm.site-photos.api.stats") }}')
@@ -1044,6 +1322,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => console.log('Error fetching site photos stats:', error));
+
+        // NEW: Refresh equipment monitoring stats
+        fetch('{{ route("pm.equipment-monitoring.api.stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update equipment monitoring notification badges
+                const equipmentBadge = document.querySelector('a[href*="equipment-monitoring.index"] .badge');
+                if (equipmentBadge && data.pending_requests !== undefined) {
+                    if (data.pending_requests > 0) {
+                        equipmentBadge.textContent = data.pending_requests;
+                        equipmentBadge.style.display = 'inline';
+                    } else {
+                        equipmentBadge.style.display = 'none';
+                    }
+                }
+
+                const maintenanceBadge = document.querySelector('a[href*="maintenance-list"] .badge');
+                if (maintenanceBadge && data.maintenance_overdue !== undefined) {
+                    if (data.maintenance_overdue > 0) {
+                        maintenanceBadge.textContent = data.maintenance_overdue;
+                        maintenanceBadge.style.display = 'inline';
+                    } else {
+                        maintenanceBadge.style.display = 'none';
+                    }
+                }
+
+                const urgentRequestsBadge = document.querySelector('a[href*="equipment-monitoring.requests"] .badge');
+                if (urgentRequestsBadge && data.urgent_requests !== undefined) {
+                    if (data.urgent_requests > 0) {
+                        urgentRequestsBadge.textContent = data.urgent_requests;
+                        urgentRequestsBadge.style.display = 'inline';
+                    } else {
+                        urgentRequestsBadge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => console.log('Error fetching equipment monitoring stats:', error));
     }, 300000); // 5 minutes
 
     // Quick approve functionality for task reports
@@ -1210,6 +1525,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // NEW: Equipment monitoring specific functions
+    window.quickApproveEquipmentRequest = function(requestId) {
+        if (confirm('Are you sure you want to approve this equipment request?')) {
+            fetch(`/admin/equipment-monitoring/requests/${requestId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    admin_notes: 'Quick approved from PM dashboard'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error approving equipment request');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error approving equipment request');
+            });
+        }
+    };
+
+    // Equipment status update function
+    window.updateEquipmentStatus = function(equipmentId, newStatus) {
+        fetch(`/sc/equipment-monitoring/equipment/${equipmentId}/availability`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                availability_status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the UI element
+                const statusElement = document.querySelector(`[data-equipment-id="${equipmentId}"] .equipment-status`);
+                if (statusElement) {
+                    statusElement.textContent = newStatus.replace('_', ' ').toUpperCase();
+                    statusElement.className = `equipment-status badge bg-${getStatusColor(newStatus)}`;
+                }
+            } else {
+                alert('Error updating equipment status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating equipment status');
+        });
+    };
+
+    // Helper function for equipment status colors
+    function getStatusColor(status) {
+        switch(status) {
+            case 'available': return 'success';
+            case 'in_use': return 'primary';
+            case 'maintenance': return 'warning';
+            case 'out_of_order': return 'danger';
+            default: return 'secondary';
+        }
+    }
+
+    // Equipment maintenance reminder
+    window.scheduleMaintenanceReminder = function(equipmentId, days) {
+        const reminderDate = new Date();
+        reminderDate.setDate(reminderDate.getDate() + days);
+        
+        // This would typically involve creating a calendar event or notification
+        alert(`Maintenance reminder set for ${reminderDate.toDateString()}`);
+    };
+
     // Auto-dismiss alerts after 10 seconds
     setTimeout(function() {
         document.querySelectorAll('.alert').forEach(function(alert) {
@@ -1219,7 +1613,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }, 10000);
+
+    // Equipment monitoring dashboard specific initialization
+    initializeEquipmentMonitoringDashboard();
 });
+
+// NEW: Equipment monitoring dashboard initialization function
+function initializeEquipmentMonitoringDashboard() {
+    // Add equipment status indicators
+    document.querySelectorAll('.equipment-item').forEach(function(item) {
+        const status = item.dataset.status;
+        const indicator = item.querySelector('.equipment-status-indicator');
+        if (indicator) {
+            indicator.classList.add(`equipment-${status.replace('_', '-')}`);
+        }
+    });
+
+    // Initialize equipment tooltips
+    const equipmentTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"][data-equipment-info]');
+    equipmentTooltips.forEach(function(tooltip) {
+        new bootstrap.Tooltip(tooltip);
+    });
+
+    // Add hover effects for equipment cards
+    document.querySelectorAll('.equipment-card').forEach(function(card) {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        });
+    });
+
+    // Initialize maintenance calendar if present
+    const maintenanceCalendar = document.getElementById('maintenanceCalendar');
+    if (maintenanceCalendar) {
+        // Initialize calendar with maintenance events
+        // This would typically use a calendar library like FullCalendar
+        console.log('Maintenance calendar initialized');
+    }
+}
 </script>
 @endpush
 @endsection

@@ -10,6 +10,9 @@ use App\Models\SiteIssue;
 use App\Models\TaskReport;
 use App\Models\ProgressReport;
 use App\Models\SitePhoto;
+use App\Models\MonitoredEquipment;
+use App\Models\EquipmentRequest;
+use App\Models\EquipmentMaintenance;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -150,7 +153,7 @@ public function pmDashboard()
             ->get();
     }
 
-    // NEW: Site Photos Statistics for PM
+    // Site Photos Statistics for PM
     $sitePhotosStats = [
         'total' => SitePhoto::whereIn('project_id', $managedProjectIds)->count(),
         'submitted' => SitePhoto::whereIn('project_id', $managedProjectIds)->where('submission_status', 'submitted')->count(),
@@ -167,12 +170,123 @@ public function pmDashboard()
             ->count(),
     ];
 
-    // NEW: Recent Site Photos in PM's projects
+    // Recent Site Photos in PM's projects
     $recentSitePhotos = SitePhoto::whereIn('project_id', $managedProjectIds)
         ->with(['project', 'uploader'])
         ->orderBy('submitted_at', 'desc')
         ->take(5)
         ->get();
+
+    // ====================================================================
+    // NEW: EQUIPMENT MONITORING INTEGRATION FOR PM DASHBOARD
+    // ====================================================================
+    
+    // Equipment Monitoring Statistics for PM's managed projects
+    $equipmentMonitoringStats = [
+        // Equipment Request Statistics
+        'total_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->count(),
+        'pending_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'pending')->count(),
+        'approved_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'approved')->count(),
+        'declined_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'declined')->count(),
+        
+        // Monitored Equipment Statistics
+        'total_equipment' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->count(),
+        'active_equipment' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('status', 'active')->count(),
+        'pending_equipment' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('status', 'pending_approval')->count(),
+        'personal_equipment' => MonitoredEquipment::where('usage_type', 'personal')
+            ->whereHas('user.tasks', function($q) use ($managedProjectIds) {
+                $q->whereIn('project_id', $managedProjectIds);
+            })->count(),
+        
+        // Equipment availability in managed projects
+        'equipment_available' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'available')->count(),
+        'equipment_in_use' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'in_use')->count(),
+        'equipment_maintenance' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'maintenance')->count(),
+        'equipment_out_of_order' => MonitoredEquipment::whereIn('project_id', $managedProjectIds)->where('availability_status', 'out_of_order')->count(),
+        
+        // Maintenance Statistics
+        'maintenance_scheduled' => EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+            $q->whereIn('project_id', $managedProjectIds);
+        })->where('status', 'scheduled')->count(),
+        'maintenance_overdue' => EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+            $q->whereIn('project_id', $managedProjectIds);
+        })->where('status', 'scheduled')->where('scheduled_date', '<', now())->count(),
+        'maintenance_this_week' => EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+            $q->whereIn('project_id', $managedProjectIds);
+        })->where('status', 'scheduled')->whereBetween('scheduled_date', [now(), now()->addDays(7)])->count(),
+        
+        // Recent activity
+        'recent_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('created_at', '>=', now()->subDays(7))->count(),
+        'urgent_requests' => EquipmentRequest::whereIn('project_id', $managedProjectIds)->where('status', 'pending')
+            ->whereIn('urgency_level', ['high', 'critical'])->count(),
+    ];
+
+    // Recent Equipment Requests in PM's projects
+    $recentEquipmentRequests = EquipmentRequest::whereIn('project_id', $managedProjectIds)
+        ->with(['user', 'project', 'monitoredEquipment'])
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
+
+    // Pending Equipment Requests requiring PM attention
+    $pendingEquipmentRequests = EquipmentRequest::whereIn('project_id', $managedProjectIds)
+        ->where('status', 'pending')
+        ->with(['user', 'project'])
+        ->orderBy('urgency_level', 'desc')
+        ->orderBy('created_at', 'asc')
+        ->get();
+
+    // Upcoming Equipment Maintenance in PM's projects
+    $upcomingEquipmentMaintenance = EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+            $q->whereIn('project_id', $managedProjectIds);
+        })
+        ->where('status', 'scheduled')
+        ->where('scheduled_date', '>=', now())
+        ->where('scheduled_date', '<=', now()->addDays(30))
+        ->with(['monitoredEquipment.user', 'monitoredEquipment.project'])
+        ->orderBy('scheduled_date', 'asc')
+        ->take(5)
+        ->get();
+
+    // Overdue Equipment Maintenance in PM's projects
+    $overdueEquipmentMaintenance = EquipmentMaintenance::whereHas('monitoredEquipment', function($q) use ($managedProjectIds) {
+            $q->whereIn('project_id', $managedProjectIds);
+        })
+        ->where('status', 'scheduled')
+        ->where('scheduled_date', '<', now())
+        ->with(['monitoredEquipment.user', 'monitoredEquipment.project'])
+        ->orderBy('scheduled_date', 'asc')
+        ->get();
+
+    // Equipment needing attention in PM's projects
+    $equipmentNeedingAttention = MonitoredEquipment::whereIn('project_id', $managedProjectIds)
+        ->where('status', 'active')
+        ->where(function($query) {
+            $query->where('availability_status', 'out_of_order')
+                  ->orWhere('availability_status', 'maintenance')
+                  ->orWhere('next_maintenance_date', '<=', now()->addDays(7));
+        })
+        ->with(['user', 'project'])
+        ->get();
+
+    // Project Equipment Summary - Equipment distribution across PM's projects
+    $projectEquipmentSummary = Project::whereIn('id', $managedProjectIds)
+        ->with(['monitoredEquipment' => function($q) {
+            $q->where('status', 'active');
+        }])
+        ->get()
+        ->map(function($project) {
+            $project->equipment_count = $project->monitoredEquipment->count();
+            $project->equipment_in_use = $project->monitoredEquipment->where('availability_status', 'in_use')->count();
+            $project->equipment_available = $project->monitoredEquipment->where('availability_status', 'available')->count();
+            $project->equipment_issues = $project->monitoredEquipment->whereIn('availability_status', ['maintenance', 'out_of_order'])->count();
+            return $project;
+        })
+        ->sortByDesc('equipment_count')
+        ->take(10);
+
+    // End Equipment Monitoring Integration
+    // ====================================================================
     
     // Get team performance (users assigned to tasks in PM's projects)
     $teamPerformance = User::whereIn('id', function($query) use ($managedProjectIds) {
@@ -262,8 +376,17 @@ public function pmDashboard()
         'recentSiteIssues',
         'criticalSiteIssues',
         'overdueReports',           
-        'sitePhotosStats',    // NEW
-        'recentSitePhotos',   // NEW
+        'sitePhotosStats',
+        'recentSitePhotos',
+        // NEW: Equipment Monitoring Variables
+        'equipmentMonitoringStats',
+        'recentEquipmentRequests',
+        'pendingEquipmentRequests',
+        'upcomingEquipmentMaintenance',
+        'overdueEquipmentMaintenance',
+        'equipmentNeedingAttention',
+        'projectEquipmentSummary',
+        // Existing variables
         'teamPerformance',
         'upcomingTasks',
         'recentActivity'

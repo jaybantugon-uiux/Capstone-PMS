@@ -17,6 +17,12 @@
                         <a href="{{ route('sc.site-photos.create') }}" class="btn btn-info">
                             <i class="fas fa-camera me-1"></i> Upload Photo
                         </a>
+                        <a href="{{ route('sc.equipment-monitoring.create-request') }}" class="btn btn-warning">
+                            <i class="fas fa-truck-loading me-1"></i> Request Equipment
+                        </a>
+                        <a href="{{ route('sc.equipment-monitoring.create-maintenance') }}" class="btn btn-secondary">
+                            <i class="fas fa-tools me-1"></i> Schedule Maintenance
+                        </a>
                         <a href="{{ route('notifications.index') }}" class="btn btn-outline-info">
                             <i class="fas fa-bell me-1"></i> Notifications 
                             @if(auth()->user()->unreadNotifications()->count() > 0)
@@ -186,6 +192,101 @@
                     @endif
                 </div>
 
+                <!-- Equipment Monitoring Subsystem Integration -->
+                <div class="row mb-4">
+                    <!-- Equipment Status Statistics -->
+                    @if(isset($equipmentStats))
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h6 class="mb-0"><i class="fas fa-cogs me-1"></i>Equipment</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-secondary">{{ $equipmentStats['total_equipment'] ?? 0 }}</h5>
+                                        <small class="text-muted">Total</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-success">{{ $equipmentStats['active_equipment'] ?? 0 }}</h5>
+                                        <small class="text-muted">Active</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Equipment Requests Statistics -->
+                    @if(isset($equipmentRequestStats))
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark text-center">
+                                <h6 class="mb-0"><i class="fas fa-truck-loading me-1"></i>Equipment Requests</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-primary">{{ $equipmentRequestStats['pending_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Pending</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-success">{{ $equipmentRequestStats['approved_requests'] ?? 0 }}</h5>
+                                        <small class="text-muted">Approved</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Equipment Maintenance Statistics -->
+                    @if(isset($upcomingMaintenance) && isset($overdueMaintenance))
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white text-center">
+                                <h6 class="mb-0"><i class="fas fa-tools me-1"></i>Maintenance</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-danger">{{ $overdueMaintenance ?? 0 }}</h5>
+                                        <small class="text-muted">Overdue</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-warning">{{ $upcomingMaintenance->count() ?? 0 }}</h5>
+                                        <small class="text-muted">Upcoming</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Equipment Issues Statistics -->
+                    @if(isset($equipmentStats))
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white text-center">
+                                <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-1"></i>Issues</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-danger">{{ $equipmentStats['out_of_order_equipment'] ?? 0 }}</h5>
+                                        <small class="text-muted">Out of Order</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h5 class="mb-0 text-warning">{{ $equipmentStats['maintenance_equipment'] ?? 0 }}</h5>
+                                        <small class="text-muted">In Maintenance</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+
                 <div class="row">
                     <!-- Critical Site Issues Alert -->
                     @if(isset($criticalSiteIssues) && $criticalSiteIssues->count() > 0)
@@ -292,6 +393,174 @@
                 </div>
 
                 <div class="row">
+                    <!-- Equipment Needing Attention Alert -->
+                    @if(isset($equipmentNeedingAttention) && $equipmentNeedingAttention->count() > 0)
+                    <div class="col-md-12 mb-4">
+                        <div class="alert alert-warning" role="alert">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Equipment Needing Attention
+                            </h5>
+                            <div class="row">
+                                @foreach($equipmentNeedingAttention->take(3) as $equipment)
+                                <div class="col-md-4 mb-2">
+                                    <div class="d-flex justify-content-between align-items-center p-2 bg-white rounded">
+                                        <div>
+                                            <strong>{{ $equipment->equipment_name }}</strong>
+                                            <br><small>{{ $equipment->project->name ?? 'Personal Equipment' }}</small>
+                                            <br><small class="text-warning">{{ ucfirst($equipment->availability_status) }}</small>
+                                        </div>
+                                        <a href="{{ route('sc.equipment-monitoring.show-equipment', $equipment) }}" class="btn btn-sm btn-warning">
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            @if($equipmentNeedingAttention->count() > 3)
+                                <div class="mt-2">
+                                    <a href="{{ route('sc.equipment-monitoring.equipment', ['status' => 'maintenance']) }}" class="btn btn-sm btn-outline-warning">
+                                        View All {{ $equipmentNeedingAttention->count() }} Equipment Issues
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Recent Equipment Requests -->
+                    @if(isset($recentEquipmentRequests) && $recentEquipmentRequests->count() > 0)
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-truck-loading me-2"></i>Recent Equipment Requests
+                                </h5>
+                                <a href="{{ route('sc.equipment-monitoring.requests') }}" class="btn btn-sm btn-outline-dark">View All</a>
+                            </div>
+                            <div class="card-body">
+                                @foreach($recentEquipmentRequests->take(5) as $request)
+                                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                        <div>
+                                            <strong>{{ $request->equipment_name }}</strong>
+                                            <br><small class="text-muted">{{ $request->project->name ?? 'Personal Use' }}</small>
+                                            <br><small class="text-muted">{{ $request->formatted_usage_type ?? '' }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{{ $request->status_badge_color }}">{{ $request->formatted_status }}</span>
+                                            @if($request->is_urgent)
+                                                <br><span class="badge bg-danger mt-1">Urgent</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Upcoming/Overdue Maintenance -->
+                    @if(isset($upcomingMaintenance) && $upcomingMaintenance->count() > 0)
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-tools me-2"></i>Upcoming/Overdue Maintenance
+                                </h5>
+                                <a href="{{ route('sc.equipment-monitoring.maintenance') }}" class="btn btn-sm btn-outline-light">View All</a>
+                            </div>
+                            <div class="card-body">
+                                @foreach($upcomingMaintenance as $maintenance)
+                                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                        <div>
+                                            <strong>{{ $maintenance->monitoredEquipment->equipment_name ?? 'N/A' }}</strong>
+                                            <br><small class="text-muted">{{ $maintenance->scheduled_date ? $maintenance->scheduled_date->format('M d, Y') : '-' }}</small>
+                                            <br><small class="text-muted">{{ $maintenance->formatted_maintenance_type ?? '' }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{{ $maintenance->status_badge_color }}">{{ $maintenance->formatted_status }}</span>
+                                            @if($maintenance->is_overdue)
+                                                <br><span class="badge bg-danger mt-1">Overdue</span>
+                                            @elseif($maintenance->is_upcoming)
+                                                <br><span class="badge bg-warning mt-1">Upcoming</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+
+                <div class="row">
+                    <!-- Personal Equipment -->
+                    @if(isset($personalEquipment) && $personalEquipment->count() > 0)
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user-cog me-2"></i>Personal Equipment
+                                </h5>
+                                <a href="{{ route('sc.equipment-monitoring.equipment', ['usage_type' => 'personal']) }}" class="btn btn-sm btn-outline-light">View All</a>
+                            </div>
+                            <div class="card-body">
+                                @foreach($personalEquipment->take(5) as $equipment)
+                                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                        <div>
+                                            <strong>{{ $equipment->equipment_name }}</strong>
+                                            <br><small class="text-muted">{{ $equipment->equipment_description }}</small>
+                                            <br><small class="text-muted">Quantity: {{ $equipment->quantity }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{{ $equipment->availability_status === 'available' ? 'success' : ($equipment->availability_status === 'in_use' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst(str_replace('_', ' ', $equipment->availability_status)) }}
+                                            </span>
+                                            @if($equipment->next_maintenance_date && $equipment->next_maintenance_date <= now()->addDays(7))
+                                                <br><span class="badge bg-warning mt-1">Maintenance Due</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Project Equipment -->
+                    @if(isset($projectEquipment) && $projectEquipment->count() > 0)
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-project-diagram me-2"></i>Project Equipment
+                                </h5>
+                                <a href="{{ route('sc.equipment-monitoring.equipment', ['usage_type' => 'project_site']) }}" class="btn btn-sm btn-outline-light">View All</a>
+                            </div>
+                            <div class="card-body">
+                                @foreach($projectEquipment->take(5) as $equipment)
+                                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                        <div>
+                                            <strong>{{ $equipment->equipment_name }}</strong>
+                                            <br><small class="text-muted">{{ $equipment->project->name ?? 'N/A' }}</small>
+                                            <br><small class="text-muted">Quantity: {{ $equipment->quantity }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-{{ $equipment->availability_status === 'available' ? 'success' : ($equipment->availability_status === 'in_use' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst(str_replace('_', ' ', $equipment->availability_status)) }}
+                                            </span>
+                                            @if($equipment->next_maintenance_date && $equipment->next_maintenance_date <= now()->addDays(7))
+                                                <br><span class="badge bg-warning mt-1">Maintenance Due</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+
+                <div class="row">
                     <!-- Recent Site Issues -->
                     @if(isset($recentSiteIssues) && $recentSiteIssues->count() > 0)
                     <div class="col-lg-6 mb-4">
@@ -382,6 +651,7 @@
                                                     <th>Tasks Assigned</th>
                                                     <th>Site Issues</th>
                                                     <th>Photos</th>
+                                                    <th>Equipment</th>
                                                     <th>Status</th>
                                                     <th>Actions</th>
                                                 </tr>
@@ -425,6 +695,27 @@
                                                             @endif
                                                         </td>
                                                         <td>
+                                                            @php
+                                                                $equipmentCount = \App\Models\MonitoredEquipment::where('project_id', $project->id)
+                                                                    ->where('user_id', auth()->id())
+                                                                    ->where('usage_type', 'project_site')
+                                                                    ->count();
+                                                                $activeEquipmentCount = \App\Models\MonitoredEquipment::where('project_id', $project->id)
+                                                                    ->where('user_id', auth()->id())
+                                                                    ->where('usage_type', 'project_site')
+                                                                    ->where('status', 'active')
+                                                                    ->count();
+                                                            @endphp
+                                                            @if($equipmentCount > 0)
+                                                                <span class="badge bg-primary">{{ $activeEquipmentCount }}/{{ $equipmentCount }}</span>
+                                                                @if($equipmentCount > $activeEquipmentCount)
+                                                                    <span class="badge bg-warning ms-1">Inactive</span>
+                                                                @endif
+                                                            @else
+                                                                <span class="text-muted">None</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
                                                             <span class="badge bg-{{ $project->status_badge_color }}">
                                                                 {{ $project->formatted_status }}
                                                             </span>
@@ -439,6 +730,9 @@
                                                                 </a>
                                                                 <a href="{{ route('sc.site-issues.create', ['project_id' => $project->id]) }}" class="btn btn-outline-danger" title="Report Issue">
                                                                     <i class="fas fa-exclamation-triangle"></i>
+                                                                </a>
+                                                                <a href="{{ route('sc.equipment-monitoring.create-request', ['project_id' => $project->id]) }}" class="btn btn-outline-warning" title="Request Equipment">
+                                                                    <i class="fas fa-truck-loading"></i>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -477,6 +771,7 @@
                                                     <th>Due Date</th>
                                                     <th>Progress</th>
                                                     <th>Site Issues</th>
+                                                    <th>Equipment</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
@@ -524,6 +819,21 @@
                                                             @endif
                                                         </td>
                                                         <td>
+                                                            @php
+                                                                $taskEquipmentCount = \App\Models\MonitoredEquipment::where('project_id', $task->project_id)
+                                                                    ->where('user_id', auth()->id())
+                                                                    ->where('usage_type', 'project_site')
+                                                                    ->where('status', 'active')
+                                                                    ->count();
+                                                            @endphp
+                                                            @if($taskEquipmentCount > 0)
+                                                                <span class="badge bg-primary">{{ $taskEquipmentCount }}</span>
+                                                                <br><small class="text-muted">Available</small>
+                                                            @else
+                                                                <span class="text-muted">None</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
                                                             <div class="btn-group btn-group-sm">
                                                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-outline-primary" title="View Task">
                                                                     <i class="fas fa-eye"></i>
@@ -539,6 +849,10 @@
                                                                 <a href="{{ route('sc.site-issues.create', ['task_id' => $task->id]) }}" 
                                                                    class="btn btn-outline-danger" title="Report Issue">
                                                                     <i class="fas fa-exclamation-triangle"></i>
+                                                                </a>
+                                                                <a href="{{ route('sc.equipment-monitoring.create-request', ['task_id' => $task->id]) }}" 
+                                                                   class="btn btn-outline-warning" title="Request Equipment">
+                                                                    <i class="fas fa-truck-loading"></i>
                                                                 </a>
                                                             </div>
                                                         </td>
@@ -588,6 +902,18 @@
                                         </a>
                                     </div>
                                     <div class="col-lg-2 col-md-4 col-6">
+                                        <a href="{{ route('sc.equipment-monitoring.create-request') }}" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <i class="fas fa-truck-loading fa-2x mb-2"></i>
+                                            <span>Request Equipment</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <a href="{{ route('sc.equipment-monitoring.create-maintenance') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <i class="fas fa-tools fa-2x mb-2"></i>
+                                            <span>Schedule Maintenance</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
                                         <a href="{{ route('sc.task-reports.index') }}" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                             <i class="fas fa-list fa-2x mb-2"></i>
                                             <span>My Reports</span>
@@ -603,6 +929,24 @@
                                         <a href="{{ route('sc.site-photos.index') }}" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                             <i class="fas fa-images fa-2x mb-2"></i>
                                             <span>My Photos</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <a href="{{ route('sc.equipment-monitoring.requests') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                                            <span>Equipment Requests</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <a href="{{ route('sc.equipment-monitoring.equipment') }}" class="btn btn-outline-success w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <i class="fas fa-cogs fa-2x mb-2"></i>
+                                            <span>My Equipment</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-6">
+                                        <a href="{{ route('sc.equipment-monitoring.maintenance') }}" class="btn btn-outline-danger w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <i class="fas fa-wrench fa-2x mb-2"></i>
+                                            <span>Maintenance</span>
                                         </a>
                                     </div>
                                 </div>
