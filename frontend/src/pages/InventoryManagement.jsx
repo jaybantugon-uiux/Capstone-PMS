@@ -10,7 +10,7 @@ import '../css/Dashboard.css';
 
 const InventoryManagement = () => {
   const [userRole, setUserRole] = useState('');
-  const [equipment, setEquipment] = useState([]);
+  const [equipment, setEquipmentList] = useState([]);
   const [newEquipment, setNewEquipment] = useState({ name: '', quantity: 0, description: '' });
   const [editEquipment, setEditEquipment] = useState({});
   const [restockData, setRestockData] = useState({ equipmentId: '', amount: 0, note: '' });
@@ -18,16 +18,77 @@ const InventoryManagement = () => {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
-
+  
   useEffect(() => {
-    // Initialize with empty data - ready for your custom functions
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      setUserRole(user.role);
+    }
+
+    fetchEquipment();
   }, []);
 
-  const handleAddSubmit = (e) => {
+  const fetchEquipment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/equipment', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+      console.log('Fetched equipments:', data);
+      if (data.status === 'success' || data.success === true) {
+        const sortedEquipment = data.equipment.sort((a, b) => b.stock - a.stock);
+        setEquipmentList(sortedEquipment);
+      }
+    } catch (error) {
+      console.error('Error fetching equipment:', error);
+    }
+  };
+  
+  
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    
-    // Add your custom function here
-    console.log('Add equipment:', newEquipment);
+    try {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+  
+      const equipmentData = {
+        name: newEquipment.name,
+        stock: newEquipment.quantity,
+        description: newEquipment.description,
+        min_stock_level: 10,
+        created_by: user ? user.id : '',
+      };
+  
+      const response = await fetch('http://localhost:8000/api/equipment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(equipmentData),
+      });
+  
+      const data = await response.json();
+      console.log(data);
+  
+      if (data.status === 'success' || data.success === true) {
+        setNewEquipment({
+          name: '',
+          quantity: 0,
+          description: '',
+        });
+        setShowAddModal(false);
+        fetchEquipment();
+      }
+    } catch (error) {
+      console.error('Error adding equipment:', error);
+    }
   };
 
   const handleRestockSubmit = (e) => {
@@ -148,24 +209,33 @@ const InventoryManagement = () => {
                   <Table responsive bordered hover>
                     <thead>
                       <tr>
-                        <th>#</th>
                         <th>Name</th>
-                        <th>Quantity</th>
                         <th>Description</th>
-                        <th>Archived</th>
+                        <th>Stock</th>
+                        <th>Stock Level</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {equipment.map((item, index) => (
+                  <tbody>
+                    {equipment.map((item) => {
+                      let stockStatus = 'In Stock';
+                      if (item.stock === 0) {
+                        stockStatus = 'Out of Stock';
+                      } else if (item.stock < 4) {
+                        stockStatus = 'Low';
+                      } else if (item.stock >= 5) {
+                        stockStatus = 'In Stock';
+                      }
+
+                      return (
                         <tr key={item.id}>
-                          <td>{index + 1}</td>
                           <td>{item.name}</td>
-                          <td>{item.quantity}</td>
                           <td>{item.description}</td>
-                          <td>{item.archived ? 'Yes' : 'No'}</td>
+                          <td>{item.stock}</td>
+                          <td>{stockStatus}</td>
                         </tr>
-                      ))}
-                    </tbody>
+                      );
+                    })}
+                  </tbody>
                   </Table>
                 </Card.Body>
               </Card>
@@ -210,11 +280,11 @@ const InventoryManagement = () => {
                   />
                 </Form.Group>
                 <div className="d-flex gap-2 justify-content-end">
-                  <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                    Cancel
-                  </Button>
                   <Button variant="primary" type="submit">
                     Add Equipment
+                  </Button>
+                  <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                    Cancel
                   </Button>
                 </div>
               </Form>
@@ -267,12 +337,12 @@ const InventoryManagement = () => {
                   />
                 </Form.Group>
                 <div className="d-flex gap-2 justify-content-end">
-                  <Button variant="secondary" onClick={() => setShowRestockModal(false)}>
-                    Cancel
-                  </Button>
                   <Button variant="primary" type="submit">
                     Restock Equipment
                   </Button>
+                  <Button variant="secondary" onClick={() => setShowRestockModal(false)}>
+                    Cancel
+                  </Button>              
                 </div>
               </Form>
             </Modal.Body>

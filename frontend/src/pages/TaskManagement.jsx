@@ -11,8 +11,11 @@ import '../css/Dashboard.css';
 const TaskManagement = () => {
   const [userRole, setUserRole] = useState('');
   const [tasks, setTasks] = useState([]);
+  const [activeTasks, setActiveTasks] = useState([]);
+  const [archivedTasks, setArchivedTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
+
   const [newTask, setNewTask] = useState({
     task_name: '',
     description: '',
@@ -22,6 +25,7 @@ const TaskManagement = () => {
     due_date: '',
     created_by: '',
   });
+
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -30,9 +34,10 @@ const TaskManagement = () => {
     created_by: '',
     archived: false,
   });
+
+  const [editTask, setEditTask] = useState({});
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
-  const [editTask, setEditTask] = useState({});
   const [showEditTaskModal, setShowEditTaskModal] = useState(false);
   const [showTaskSelection, setShowTaskSelection] = useState(false);
   const [showArchiveTaskModal, setShowArchiveTaskModal] = useState(false);
@@ -43,10 +48,13 @@ const TaskManagement = () => {
       const user = JSON.parse(userData);
       setUserRole(user.role);
     }
+  
     fetchProjects();
     fetchTasks();
     fetchUsers();
+    fetchArchivedTasks();
   }, []);
+  
 
   const fetchProjects = async () => {
     try {
@@ -88,6 +96,29 @@ const TaskManagement = () => {
     }
   };
 
+  const fetchArchivedTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/tasks/archived', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        console.log('Archived tasks:', data.tasks);
+        setArchivedTasks(data.tasks || []);
+      } else {
+        console.error('Failed to fetch archived tasks:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching archived tasks:', error);
+    }
+  };
+  
+
   const fetchUsers = async () => {
     try {
       const response = await fetch('http://localhost:8000/api/users', {
@@ -102,70 +133,6 @@ const TaskManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-    }
-  };
-
-  const handleTaskSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Authentication token not found. Please log in again.');
-        return;
-      }
-
-      // Get current user for created_by field
-      const userData = localStorage.getItem('user');
-      const user = userData ? JSON.parse(userData) : null;
-      
-      const taskData = {
-        ...newTask,
-        created_by: user ? user.id : '',
-      };
-
-      const response = await fetch('http://localhost:8000/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(taskData),
-      });
-
-      // Check if response is redirect (HTML instead of JSON)
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        alert('Authentication failed. Please log in again.');
-        return;
-      }
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        setTasks([...tasks, data.task]);
-        setNewTask({
-          task_name: '',
-          description: '',
-          assigned_to: '',
-          project_id: '',
-          status: 'Pending',
-          due_date: '',
-          created_by: '',
-        });
-        setShowTaskModal(false);
-        // Refresh tasks list
-        fetchTasks();
-        alert('Task created successfully!');
-      } else {
-        console.error('Error creating task:', data.message);
-        alert('Failed to create task: ' + (data.message || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error adding task:', error);
-      if (error.message.includes('Failed to fetch')) {
-        alert('Authentication failed or server error. Please log in again.');
-      } else {
-        alert('Error creating task. Please try again.');
-      }
     }
   };
 
@@ -199,105 +166,201 @@ const TaskManagement = () => {
     }
   };
 
+  const handleTaskSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+  
+      const taskData = {
+        ...newTask,
+        created_by: user ? user.id : '',
+      };
+  
+      const response = await fetch('http://localhost:8000/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(taskData),
+      });
+  
+      const data = await response.json();
+      console.log('Fetched tasks:', data);
+  
+      if (data.status === 'success' || data.success === true) {
+        setNewTask({
+          task_name: '',
+          description: '',
+          assigned_to: '',
+          project_id: '',
+          status: 'Pending',
+          due_date: '',
+          created_by: '',
+        });
+        setShowTaskModal(false);
+        console.log('Created Task: ', data);
+        fetchTasks();
+      } else {
+        alert('Failed to create task: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+      alert('Error creating task. Please try again.');
+    }
+  };
+  
+  const handleArchiveTaskSubmit = async (taskId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/archive`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.status === 'success') {
+        console.log('Task archived successfully');
+        await fetchArchivedTasks();
+      } else {
+        console.log('Failed to archive task', data);
+      }
+    } catch (error) {
+      console.error('Error archiving task:', error);
+    }
+  };
+  
+  const handleUnarchiveTaskSubmit = async (taskId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/unarchive`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        console.log('Task unarchived successfully');
+        await fetchArchivedTasks(); // refresh archived list
+        await fetchTasks(); // refresh active list
+      } else {
+        console.error('Failed to unarchive task:', data.message);
+      }
+    } catch (error) {
+      console.error('Error unarchiving task:', error);
+    }
+  };
+  
+  
+  const handleNewTaskChange = (e) => {
+    const { name, value } = e.target;
+    setNewTask((prevTask) => ({
+      ...prevTask,
+      [name]: value,
+    }));
+  };
+
+  const handleEditTaskChange = (e) => {
+    const { name, value } = e.target;
+    setEditTask((prevTask) => ({
+      ...prevTask,
+      [name]: value,
+    }));
+  };
+  
+  const handleProjectChange = (e) => {
+    const { name, value } = e.target;
+    setNewProject({ ...newProject, [name]: value });
+  };
+
+  const handleArchiveTaskChange = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/tasks', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        const tasks = data.tasks || [];
+        console.log('Fetched tasks:', tasks);
+  
+        // Split into active and archived if needed
+        setTasks(tasks.filter(task => !task.archived));
+        setArchivedTasks(tasks.filter(task => task.archived));
+      } else {
+        console.error('API responded with success: false');
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+    
+
   const handleEditTaskSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Authentication token not found. Please log in again.');
+      const userData = localStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+  
+      if (!token || !user) {
+        alert('Authentication failed. Please log in again.');
         return;
       }
-
+  
+      const updatedTaskData = {
+        ...editTask, // assuming editTask holds the current task data
+        created_by: user.id,
+      };
+  
       const response = await fetch(`http://localhost:8000/api/tasks/${editTask.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(editTask),
+        body: JSON.stringify(updatedTaskData),
       });
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        alert('Authentication failed. Please log in again.');
-        return;
-      }
   
       const data = await response.json();
-      if (data.status === 'success') {
-        setTasks(tasks.map((task) =>
-          task.id === editTask.id ? data.task : task
-        ));
+      console.log(data);
+  
+      if (data.status === 'success' || data.success === true) {
+        fetchTasks();
         setShowEditTaskModal(false);
         alert('Task updated successfully!');
       } else {
-        alert('Error: ' + (data.message || 'Failed to update task.'));
+        alert('Failed to update task: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error editing task:', error);
-      if (error.message.includes('Failed to fetch')) {
-        alert('Authentication failed or server error. Please log in again.');
-      } else {
-        alert('Error editing task. Please try again.');
-      }
+      console.error('Error updating task:', error);
+      alert('Error updating task. Please try again.');
     }
   };
-
-  const handleArchiveTaskSubmit = async (taskId) => {
-    try {
-      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/archive`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        setTasks(tasks.map((task) => (task.id === taskId ? { ...task, archived: true } : task)));
-        setShowArchiveTaskModal(false);
-      }
-    } catch (error) {
-      console.error('Error archiving task:', error);
-    }
-  };
-
-  const handleTaskChange = (e) => {
-    const { name, value } = e.target;
-    setNewTask({ ...newTask, [name]: value });
-  };
-
-  const handleProjectChange = (e) => {
-    const { name, value } = e.target;
-    setNewProject({ ...newProject, [name]: value });
-  };
-
-  const handleEditTaskChange = (e) => {
-    const { name, value } = e.target;
-    setEditTask({ ...editTask, [name]: value });
-  };
-
-
-
-  // Helper function to format status for display
-  const formatStatus = (status) => {
-    return status
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  // Helper function to get status badge color
+  
   const getStatusBadgeColor = (status) => {
-    switch (status) {
+    const normalized = status.toLowerCase();
+    switch (normalized) {
       case 'completed':
         return 'success';
-      case 'in_progress':
+      case 'in progress':
         return 'primary';
-      case 'on_hold':
-        return 'warning';
       case 'cancelled':
         return 'danger';
-      case 'pending':
       default:
         return 'secondary';
     }
@@ -441,39 +504,38 @@ const TaskManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {tasks.map((task, index) => (
-                        <tr key={task.id}>
-                          <td>{index + 1}</td>
-                          <td>{task.task_name}</td>
-                          <td>{task.description}</td>
-                          <td>
-                            {users.find(u => u.id === task.assigned_to)?.first_name} {users.find(u => u.id === task.assigned_to)?.last_name} ({users.find(u => u.id === task.assigned_to)?.username})
-                          </td>
-                          <td>
-                            {projects.find(p => p.id === task.project_id)?.name || task.project_id}
-                          </td>
-                                                     <td>
-                             {task.due_date
-                               ? new Date(task.due_date).toISOString().split('T')[0]
-                               : '-'}
-                           </td>
-                          <td>
-                            <span className={`badge bg-${
-                              task.status === 'Completed' ? 'success' :
-                              task.status === 'In Progress' ? 'primary' :
-                              task.status === 'On Hold' ? 'warning' :
-                              task.status === 'Cancelled' ? 'danger' : 'secondary'
-                            }`}>
-                              {task.status}
-                            </span>
-                          </td>
-                                                     <td>
-                             {task.created_at
-                               ? new Date(task.created_at).toISOString().split('T')[0]
-                               : '-'}
-                           </td>
-                        </tr>
-                      ))}
+                      {tasks
+                        .filter(task => !task.archived) // Only show active tasks
+                        .map((task, index) => (
+                          <tr key={task.id}>
+                            <td>{index + 1}</td>
+                            <td>{task.task_name}</td>
+                            <td>{task.description}</td>
+                            <td>
+                              {users.find(u => u.id === task.assigned_to)?.first_name}{" "}
+                              {users.find(u => u.id === task.assigned_to)?.last_name} (
+                              {users.find(u => u.id === task.assigned_to)?.username})
+                            </td>
+                            <td>
+                              {projects.find(p => p.id === task.project_id)?.name || task.project_id}
+                            </td>
+                            <td>
+                              {task.due_date
+                                ? new Date(task.due_date).toISOString().split('T')[0]
+                                : '-'}
+                            </td>
+                            <td>
+                              <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
+                                {task.status}
+                              </span>
+                            </td>
+                            <td>
+                              {task.created_at
+                                ? new Date(task.created_at).toISOString().split('T')[0]
+                                : '-'}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </Table>
                 </Card.Body>
@@ -493,7 +555,7 @@ const TaskManagement = () => {
                     type="text"
                     name="task_name"
                     value={newTask.task_name}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                     placeholder="Enter task name"
                     required
                   />
@@ -504,7 +566,7 @@ const TaskManagement = () => {
                     as="textarea"
                     name="description"
                     value={newTask.description}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                     rows={3}
                     placeholder="Enter task description"
                     required
@@ -515,7 +577,7 @@ const TaskManagement = () => {
                   <Form.Select
                     name="assigned_to"
                     value={newTask.assigned_to}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                     required
                   >
                     <option value="">Select an assignee</option>
@@ -531,7 +593,7 @@ const TaskManagement = () => {
                   <Form.Select
                     name="project_id"
                     value={newTask.project_id}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                     required
                   >
                     <option value="">Select a project</option>
@@ -548,7 +610,7 @@ const TaskManagement = () => {
                     type="date"
                     name="due_date"
                     value={newTask.due_date}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -556,12 +618,11 @@ const TaskManagement = () => {
                   <Form.Select
                     name="status"
                     value={newTask.status}
-                    onChange={handleTaskChange}
+                    onChange={handleNewTaskChange}
                   >
                     <option value="Pending">Pending</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Completed">Completed</option>
-                    <option value="On Hold">On Hold</option>
                     <option value="Cancelled">Cancelled</option>
                   </Form.Select>
                 </Form.Group>
@@ -571,7 +632,7 @@ const TaskManagement = () => {
                     </Button>
                     <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
                       Cancel
-                    </Button>
+                    </Button>                    
                  </div>
               </Form>
             </Modal.Body>
@@ -635,19 +696,14 @@ const TaskManagement = () => {
                     }
                   />
                 </Form.Group>
-                  <div className="d-flex gap-2 justify-content-end">
-                    <Button variant="primary" type="submit">
-                      Create Project
-                    </Button>
-                    <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
-                      Cancel
-                    </Button>
-                  </div>
+                <Button variant="primary" type="submit">
+                  Add Project
+                </Button>
               </Form>
             </Modal.Body>
           </Modal>
 
-                     <Modal show={showEditTaskModal} onHide={() => setShowEditTaskModal(false)} centered size="lg">
+          <Modal show={showEditTaskModal} onHide={() => setShowEditTaskModal(false)} centered size="lg">
             <Modal.Header closeButton>
               <Modal.Title>Edit Task</Modal.Title>
             </Modal.Header>
@@ -679,7 +735,7 @@ const TaskManagement = () => {
                           <td>{projects.find(p => p.id === task.project_id)?.name || task.project_id}</td>
                           <td>
                             <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
-                              {formatStatus(task.status)}
+                              {(task.status)}
                             </span>
                           </td>
                           <td>
@@ -790,12 +846,12 @@ const TaskManagement = () => {
             </Modal.Body>
           </Modal>
 
-                     <Modal show={showArchiveTaskModal} onHide={() => setShowArchiveTaskModal(false)} centered size="lg">
+          <Modal show={showArchiveTaskModal} onHide={() => setShowArchiveTaskModal(false)} centered size="xl">
             <Modal.Header closeButton>
-              <Modal.Title>Archive Task</Modal.Title>
+              <Modal.Title>Manage Tasks</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              <h5>Select a Task to Archive</h5>
+              <h5 className="mt-4 mb-3">Active Tasks</h5>
               <Table responsive bordered hover>
                 <thead>
                   <tr>
@@ -803,24 +859,26 @@ const TaskManagement = () => {
                     <th>Task Name</th>
                     <th>Description</th>
                     <th>Assigned To</th>
-                    <th>Project ID</th>
+                    <th>Project</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tasks.map((task, index) => (
+                  {tasks.filter(task => !task.archived).map((task, index) => (
                     <tr key={task.id}>
                       <td>{index + 1}</td>
                       <td>{task.task_name}</td>
                       <td>{task.description}</td>
                       <td>
-                        {users.find(u => u.id === task.assigned_to)?.first_name} {users.find(u => u.id === task.assigned_to)?.last_name} ({users.find(u => u.id === task.assigned_to)?.username})
+                        {users.find(u => u.id === task.assigned_to)?.first_name}{" "}
+                        {users.find(u => u.id === task.assigned_to)?.last_name} (
+                        {users.find(u => u.id === task.assigned_to)?.username})
                       </td>
                       <td>{projects.find(p => p.id === task.project_id)?.name || task.project_id}</td>
                       <td>
                         <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
-                          {formatStatus(task.status)}
+                          {task.status}
                         </span>
                       </td>
                       <td>
@@ -834,6 +892,56 @@ const TaskManagement = () => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </Table>
+
+              <h5 className="mt-4 mb-3">Archived Tasks</h5>
+              <Table responsive bordered hover>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Task Name</th>
+                    <th>Description</th>
+                    <th>Assigned To</th>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archivedTasks.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="text-center">No archived tasks found.</td>
+                    </tr>
+                  ) : (
+                    archivedTasks.map((task, index) => (
+                      <tr key={task.id}>
+                        <td>{index + 1}</td>
+                        <td>{task.task_name}</td>
+                        <td>{task.description}</td>
+                        <td>
+                          {users.find(u => u.id === task.assigned_to)?.first_name}{" "}
+                          {users.find(u => u.id === task.assigned_to)?.last_name} (
+                          {users.find(u => u.id === task.assigned_to)?.username})
+                        </td>
+                        <td>{projects.find(p => p.id === task.project_id)?.name || task.project_id}</td>
+                        <td>
+                          <span className={`badge bg-${getStatusBadgeColor(task.status)}`}>
+                            {task.status}
+                          </span>
+                        </td>
+                        <td>
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleUnarchiveTaskSubmit(task.id)}
+                          >
+                            Unarchive
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </Table>
             </Modal.Body>

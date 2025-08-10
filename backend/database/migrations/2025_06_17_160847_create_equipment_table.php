@@ -9,16 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-public function up()
-{
-    Schema::create('equipment', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->text('description')->nullable();
-        $table->integer('stock')->default(0);
-        $table->timestamps();
-    });
-}
+    public function up(): void
+    {
+        Schema::create('equipment', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->text('description')->nullable();
+            $table->integer('stock')->default(0);
+            $table->integer('min_stock_level')->default(10);
+            $table->boolean('archived')->default(false);
+            $table->enum('status', ['available', 'in_use', 'maintenance'])->default('available');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

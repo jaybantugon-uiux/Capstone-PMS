@@ -49,12 +49,23 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // User routes
     Route::get('users', [ApiAuthController::class, 'apiUsers']);
-    
+
+    // Equipment
+    Route::get('equipment', [EquipmentController::class, 'index']);
+    Route::post('equipment', [EquipmentController::class, 'store']);
+    Route::get('equipment/{id}', [EquipmentController::class, 'show']);
+    Route::put('equipment/{id}', [EquipmentController::class, 'update']);
+    Route::post('equipment/{id}', [EquipmentController::class, 'archive']);
+
     // Task routes
     Route::get('tasks', [TaskController::class, 'apiIndex']);
     Route::post('tasks', [TaskController::class, 'apiStore']);
     Route::put('tasks/{task}', [TaskController::class, 'apiUpdate']);
-    Route::post('tasks/{task}/archive', [TaskController::class, 'apiArchive']);
+    Route::get('/tasks', [TaskController::class, 'active']);
+    Route::get('/tasks/archived', [TaskController::class, 'archived']);
+    Route::post('/tasks/{id}/unarchive', [TaskController::class, 'unarchive']);
+
+
 });
 
 // Health check endpoint
@@ -64,13 +75,4 @@ Route::get('/health', function () {
         'message' => 'API is working',
         'timestamp' => now()->toISOString()
     ]);
-});
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/equipment', [EquipmentController::class, 'apiIndex']);
-    Route::post('/equipment', [EquipmentController::class, 'apiStore']);
-    Route::put('/equipment/{id}', [EquipmentController::class, 'apiUpdate']);
-    Route::post('/equipment/{id}/archive', [EquipmentController::class, 'apiArchive']);
-    
-    Route::post('/equipment/{id}/restock', [EquipmentController::class, 'apiRestock']);
 });

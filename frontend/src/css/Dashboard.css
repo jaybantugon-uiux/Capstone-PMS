@@ -301,7 +301,6 @@ button:focus {
   }
 }
 
-/* Enhanced Modal Styles */
 .modal {
   backdrop-filter: blur(5px);
   background-color: rgba(0, 0, 0, 0.5);
@@ -317,7 +316,7 @@ button:focus {
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background-color:#007bff;
   color: white;
   border-bottom: none;
   padding: 1.5rem 2rem;
@@ -468,7 +467,6 @@ button:focus {
 }
 
 .modal .table thead th {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border: none;
   padding: 1rem;
   font-weight: 600;
@@ -594,7 +592,6 @@ button:focus {
   }
 }
 
-/* Large Modal for Tables */
 .modal-dialog.modal-lg {
   max-width: 90%;
 }
@@ -606,7 +603,6 @@ button:focus {
   }
 }
 
-/* Animation for Modal */
 .modal.fade .modal-dialog {
   transition: transform 0.3s ease-out;
   transform: translate(0, -50px);
@@ -616,7 +612,6 @@ button:focus {
   transform: none;
 }
 
-/* Button Group in Modals */
 .modal .d-flex.gap-2 {
   gap: 0.75rem !important;
 }
@@ -632,7 +627,6 @@ button:focus {
   }
 }
 
-/* Form Group Spacing */
 .modal .form-group {
   margin-bottom: 1.5rem;
 }
@@ -643,7 +637,6 @@ button:focus {
   }
 }
 
-/* Checkbox and Radio Styles */
 .modal .form-check {
   padding-left: 1.75rem;
 }
@@ -668,14 +661,12 @@ button:focus {
   font-family: 'Inter', sans-serif;
 }
 
-/* Loading States */
 .modal .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
 
-/* Success/Error States */
 .modal .form-control.is-valid {
   border-color: #28a745;
   box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
@@ -692,7 +683,6 @@ button:focus {
   margin-top: 0.25rem;
 }
 
-/* Modal Footer */
 .modal-footer {
   background: #f8f9fa;
   border-top: 1px solid #e9ecef;

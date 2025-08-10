@@ -20,13 +20,17 @@ class EquipmentController extends Controller
                 ->select('id', 'name', 'description', 'stock', 'min_stock_level', 'updated_at')
                 ->orderBy('name')
                 ->get();
-            
-            return view('equipment.index', compact('equipment'));
+
+                return response()->json([
+                    'success' => true,
+                    'equipment' => $equipment
+                  ], 200);
         } catch (\Exception $e) {
             Log::error('Equipment index error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Unable to load equipment list.');
-        } 
+            return response()->json(['error' => 'Unable to load equipment list.'], 500);
+        }
     }
+
 
     // Show archived equipment
     public function archived()
