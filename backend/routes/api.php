@@ -51,21 +51,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users', [ApiAuthController::class, 'apiUsers']);
 
     // Equipment
-    Route::get('equipment', [EquipmentController::class, 'index']);
-    Route::post('equipment', [EquipmentController::class, 'store']);
-    Route::get('equipment/{id}', [EquipmentController::class, 'show']);
-    Route::put('equipment/{id}', [EquipmentController::class, 'update']);
-    Route::post('equipment/{id}', [EquipmentController::class, 'archive']);
+    Route::get('/equipment', [EquipmentController::class, 'apiIndex']);
+    Route::post('/equipment', [EquipmentController::class, 'apiStore']);
+    Route::put('/equipment/{id}', [EquipmentController::class, 'apiUpdate']);
+    Route::post('/equipment/{id}/archived', [EquipmentController::class, 'archived']);
+    Route::get('/equipment/{id}/archive', [EquipmentController::class, 'archive']);
+    Route::post('/equipment/{id}/archived', [EquipmentController::class, 'apiArchive']);
+    Route::get('/equipment/archived', [EquipmentController::class, 'apiArchived']);
+    Route::post('/equipment/{id}/unarchive', [EquipmentController::class, 'apiUnarchive']);
+    Route::post('/equipment/{id}/restock', [EquipmentController::class, 'apiRestock']);
 
     // Task routes
     Route::get('tasks', [TaskController::class, 'apiIndex']);
     Route::post('tasks', [TaskController::class, 'apiStore']);
     Route::put('tasks/{task}', [TaskController::class, 'apiUpdate']);
-    Route::get('/tasks', [TaskController::class, 'active']);
-    Route::get('/tasks/archived', [TaskController::class, 'archived']);
-    Route::post('/tasks/{id}/unarchive', [TaskController::class, 'unarchive']);
-
-
+    Route::get('tasks/archived', [TaskController::class, 'archived']);
+    Route::post('tasks/active', [TaskController::class, 'active']);
+    Route::post('tasks/{task}/archived', [TaskController::class, 'apiArchive']);
+    Route::post('tasks/{task}/unarchive', [TaskController::class, 'apiUnarchive']);
 });
 
 // Health check endpoint

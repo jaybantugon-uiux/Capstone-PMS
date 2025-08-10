@@ -20,17 +20,13 @@ class EquipmentController extends Controller
                 ->select('id', 'name', 'description', 'stock', 'min_stock_level', 'updated_at')
                 ->orderBy('name')
                 ->get();
-
-                return response()->json([
-                    'success' => true,
-                    'equipment' => $equipment
-                  ], 200);
+            
+            return view('equipment.index', compact('equipment'));
         } catch (\Exception $e) {
             Log::error('Equipment index error: ' . $e->getMessage());
-            return response()->json(['error' => 'Unable to load equipment list.'], 500);
-        }
+            return redirect()->back()->with('error', 'Unable to load equipment list.');
+        } 
     }
-
 
     // Show archived equipment
     public function archived()
@@ -486,44 +482,57 @@ class EquipmentController extends Controller
         $request->validate([
             'amount' => 'required|integer|min:1|max:10000',
             'note' => 'nullable|string|max:255',
+        ], [
+            'amount.required' => 'Restock amount is required.',
+            'amount.integer' => 'Amount must be a valid number.',
+            'amount.min' => 'Amount must be at least 1.',
+            'amount.max' => 'Cannot restock more than 10,000 units at once.',
         ]);
 
         try {
-            DB::transaction(function () use ($request, $id) {
+            DB::transaction(function () use ($request, $id, &$equipment) {
                 $equipment = Equipment::lockForUpdate()->findOrFail($id);
-                
+
                 if ($equipment->archived) {
                     throw new \Exception('Cannot restock archived equipment.');
                 }
-                
-                // Check if new stock would exceed maximum
+
                 $newStock = $equipment->stock + $request->amount;
                 if ($newStock > 10000) {
                     throw new \Exception('Total stock would exceed maximum limit of 10,000 units.');
                 }
-                
+
                 $equipment->increment('stock', $request->amount);
 
                 EquipmentStockLog::create([
                     'equipment_id' => $equipment->id,
-                    'user_id' => auth()->id(),
+                    'user_id' => Auth::id(),
                     'change' => $request->amount,
-                    'note' => $request->note ?: 'Equipment restocked via API',
+                    'note' => $request->note ?: 'Equipment restocked',
                 ]);
             });
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Equipment restocked successfully!'
-            ]);
-            
+                'message' => 'Equipment restocked successfully!',
+                'equipment' => [
+                    'id' => $equipment->id,
+                    'name' => $equipment->name,
+                    'description' => $equipment->description,
+                    'quantity' => $equipment->stock,
+                    'archived' => $equipment->archived
+                ]
+            ], 200);
+
         } catch (\Exception $e) {
+            Log::error('Equipment restock error: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage() ?: 'Failed to restock equipment.'
-            ], 400);
+            ], 500);
         }
     }
+
 
     public function apiStore(Request $request)
     {
@@ -616,22 +625,96 @@ class EquipmentController extends Controller
         }
     }
 
+    public function apiActive(Equipment $equipment)
+    {
+        $equipment->archived = false;
+        $equipment->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Equipment restored successfully',
+        ]);
+    }
+    
     public function apiArchive($id)
     {
         try {
             $equipment = Equipment::findOrFail($id);
+
+            if ($equipment->archived) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Equipment is already archived.'
+                ], 400);
+            }
+
             $equipment->archived = true;
             $equipment->save();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Equipment archived successfully.'
+                'message' => 'Equipment archived successfully.',
+                'equipment' => $equipment
             ]);
         } catch (\Exception $e) {
+            Log::error('API archive error: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to archive equipment.'
             ], 500);
         }
     }
+
+    public function apiArchived()
+    {
+        try {
+            $equipment = Equipment::where('archived', true)
+                ->select('id', 'name', 'description', 'stock as quantity', 'min_stock_level', 'updated_at')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'equipment' => $equipment
+            ]);
+        } catch (\Exception $e) {
+            Log::error('API fetch archived error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to load archived equipment.'
+            ], 500);
+        }
+    }
+
+    public function apiUnarchive($id)
+    {
+        try {
+            $equipment = Equipment::findOrFail($id);
+
+            if (!$equipment->archived) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Equipment is already active.',
+                    'equipment' => $equipment
+                ]);
+            }
+
+            $equipment->archived = false;
+            $equipment->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Equipment unarchived successfully.',
+                'equipment' => $equipment
+            ]);
+        } catch (\Exception $e) {
+            Log::error('API unarchive error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to unarchive equipment.'
+            ], 500);
+        }
+    }
+
+
 }

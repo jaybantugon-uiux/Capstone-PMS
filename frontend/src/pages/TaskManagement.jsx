@@ -50,8 +50,9 @@ const TaskManagement = () => {
     }
   
     fetchProjects();
-    fetchTasks();
     fetchUsers();
+    fetchTasks();
+    fetchActiveTasks();
     fetchArchivedTasks();
   }, []);
   
@@ -96,6 +97,29 @@ const TaskManagement = () => {
     }
   };
 
+  const fetchActiveTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8000/api/tasks', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        console.log('Active tasks:', data.tasks);
+        setActiveTasks(data.tasks || []);
+      } else {
+        console.error('Failed to fetch active tasks:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching active tasks:', error);
+    }
+  };
+  
+
   const fetchArchivedTasks = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -116,7 +140,7 @@ const TaskManagement = () => {
     } catch (error) {
       console.error('Error fetching archived tasks:', error);
     }
-  };
+  };  
   
 
   const fetchUsers = async () => {
@@ -215,26 +239,23 @@ const TaskManagement = () => {
   const handleArchiveTaskSubmit = async (taskId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/archive`, {
+      const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/archived`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
       });
   
       const data = await response.json();
   
-      if (data.status === 'success') {
-        console.log('Task archived successfully');
+      if (data.status === 'success' || data.status === 'info') {
+        await fetchActiveTasks();
         await fetchArchivedTasks();
-      } else {
-        console.log('Failed to archive task', data);
       }
     } catch (error) {
       console.error('Error archiving task:', error);
     }
-  };
+  };    
   
   const handleUnarchiveTaskSubmit = async (taskId) => {
     try {
@@ -243,18 +264,14 @@ const TaskManagement = () => {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
       });
   
       const data = await response.json();
   
-      if (data.success) {
-        console.log('Task unarchived successfully');
-        await fetchArchivedTasks(); // refresh archived list
-        await fetchTasks(); // refresh active list
-      } else {
-        console.error('Failed to unarchive task:', data.message);
+      if (data.status === 'success' || data.status === 'info') {
+        await fetchActiveTasks();
+        await fetchArchivedTasks();
       }
     } catch (error) {
       console.error('Error unarchiving task:', error);
@@ -282,33 +299,7 @@ const TaskManagement = () => {
     const { name, value } = e.target;
     setNewProject({ ...newProject, [name]: value });
   };
-
-  const handleArchiveTaskChange = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/tasks', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
   
-      const data = await response.json();
-  
-      if (data.success) {
-        const tasks = data.tasks || [];
-        console.log('Fetched tasks:', tasks);
-  
-        // Split into active and archived if needed
-        setTasks(tasks.filter(task => !task.archived));
-        setArchivedTasks(tasks.filter(task => task.archived));
-      } else {
-        console.error('API responded with success: false');
-      }
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
-  };
-    
 
   const handleEditTaskSubmit = async (e) => {
     e.preventDefault();
@@ -865,7 +856,7 @@ const TaskManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {tasks.filter(task => !task.archived).map((task, index) => (
+                  {activeTasks.map((task, index) => (
                     <tr key={task.id}>
                       <td>{index + 1}</td>
                       <td>{task.task_name}</td>

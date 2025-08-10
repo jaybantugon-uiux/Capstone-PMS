@@ -359,7 +359,7 @@ class TaskController extends Controller
 
     public function active()
     {
-        $tasks = Task::where('archived', false)->with(['project', 'siteCoordinator'])->get();
+        $tasks = Task::where('archived', false)->with(['admin', 'project', 'siteCoordinator'])->get();
 
         return response()->json([
             'success' => true,
@@ -371,30 +371,33 @@ class TaskController extends Controller
     {
         $user = Auth::user();
 
-        // Only admin and pm can see archived tasks
-        if (!in_array($user->role, ['admin', 'pm'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to view archived tasks.'
-            ], 403);
+        if ($user->role === 'admin') {
+            $tasks = Task::where('archived', true)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } elseif ($user->role === 'pm') {
+            $tasks = Task::where('created_by', $user->id)
+                ->where('archived', true)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } elseif ($user->role === 'sc') {
+            $tasks = Task::where('assigned_to', $user->id)
+                ->where('archived', true)
+                ->with(['creator', 'siteCoordinator', 'project'])
+                ->latest()
+                ->get();
+        } else {
+            return response()->json(['error' => 'Unauthorized'], 403);
         }
-
-        // Fetch archived tasks based on role
-        $query = Task::where('archived', true)
-            ->with(['creator', 'siteCoordinator', 'project'])
-            ->latest();
-
-        if ($user->role !== 'admin') {
-            $query->where('created_by', $user->id);
-        }
-
-        $tasks = $query->get(); // Remove pagination for frontend use
 
         return response()->json([
             'success' => true,
             'tasks' => $tasks,
         ]);
     }
+
 
     public function unarchive($id)
     {
@@ -418,6 +421,7 @@ class TaskController extends Controller
             'task' => $task,
         ]);
     }
+
 
     public function notifications()
     {
@@ -636,8 +640,11 @@ class TaskController extends Controller
 
     public function apiArchive(Task $task)
     {
-        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if ($task->archived) {
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Task is already archived.'
+            ]);
         }
 
         $task->update(['archived' => true]);
@@ -645,8 +652,11 @@ class TaskController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Task archived successfully.',
+            'task' => $task
         ]);
     }
+
+
 
     public function apiUnarchive(Task $task)
     {
