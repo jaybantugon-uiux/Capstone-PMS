@@ -217,17 +217,24 @@ const TaskManagement = () => {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/archive`, {
         method: 'POST',
-        headers: {
+                headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
   
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Request failed with status ${response.status}`);
+      }
+
       const data = await response.json();
-  
-      if (data.status === 'success') {
+
+      if (data.status === 'success' || data.success === true) {
         console.log('Task archived successfully');
         await fetchArchivedTasks();
+        await fetchTasks();
       } else {
         console.log('Failed to archive task', data);
       }
@@ -244,17 +251,18 @@ const TaskManagement = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
   
       const data = await response.json();
   
-      if (data.success) {
+      if (data.status === 'success' || data.success === true) {
         console.log('Task unarchived successfully');
         await fetchArchivedTasks(); // refresh archived list
         await fetchTasks(); // refresh active list
       } else {
-        console.error('Failed to unarchive task:', data.message);
+        console.error('Failed to unarchive task:', data.message || data);
       }
     } catch (error) {
       console.error('Error unarchiving task:', error);

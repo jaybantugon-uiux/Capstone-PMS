@@ -61,9 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('tasks', [TaskController::class, 'apiIndex']);
     Route::post('tasks', [TaskController::class, 'apiStore']);
     Route::put('tasks/{task}', [TaskController::class, 'apiUpdate']);
-    Route::get('/tasks', [TaskController::class, 'active']);
-    Route::get('/tasks/archived', [TaskController::class, 'archived']);
-    Route::post('/tasks/{id}/unarchive', [TaskController::class, 'unarchive']);
+    Route::get('tasks/archived', [TaskController::class, 'archived']);
+    Route::post('tasks/{task}/archive', [TaskController::class, 'apiArchive']);
+    Route::post('tasks/{task}/unarchive', [TaskController::class, 'apiUnarchive']);
 
 
 });
