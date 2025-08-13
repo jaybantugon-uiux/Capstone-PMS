@@ -12,12 +12,14 @@ class TaskReport extends Model
     use HasFactory;
 
     protected $fillable = [
+        'project_id',
         'task_id',
         'user_id',
-        'report_title',
-        'report_date',
+        'task_title',
+        'reported_at',
+        'date_reported',
         'task_status',
-        'work_description',
+        'description',
         'progress_percentage',
         'hours_worked',
         'issues_encountered',
@@ -35,7 +37,7 @@ class TaskReport extends Model
     ];
 
     protected $casts = [
-        'report_date' => 'date',
+        'reported_at' => 'datetime',
         'progress_percentage' => 'integer',
         'hours_worked' => 'decimal:2',
         'photos' => 'array',

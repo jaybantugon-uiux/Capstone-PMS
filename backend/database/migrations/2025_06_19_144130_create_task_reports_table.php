@@ -32,12 +32,19 @@ return new class extends Migration
         // Create task_reports table
         Schema::create('task_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('task_id')->constrained('tasks')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('report_title');
-            $table->date('report_date');
+
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->foreignId('task_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+
+            $table->string('task_title')->nullable();
+            $table->dateTime('reported_at')->nullable();
+            $table->date('date_reported')->nullable();
+            $table->timestamps();
+
             $table->enum('task_status', ['pending', 'in_progress', 'completed', 'on_hold', 'cancelled'])->default('pending');
-            $table->text('work_description');
+            $table->text('description')->nullable();
+            $table->enum('status', ['open', 'in_progress', 'resolved', 'closed', 'escalated'])->default('open');
             $table->integer('progress_percentage')->default(0);
             $table->decimal('hours_worked', 5, 2)->nullable();
             $table->text('issues_encountered')->nullable();
@@ -47,31 +54,26 @@ return new class extends Migration
             $table->json('photos')->nullable();
             $table->enum('weather_conditions', ['sunny', 'cloudy', 'rainy', 'stormy', 'windy'])->nullable();
             $table->text('additional_notes')->nullable();
-            
+
             // Admin review fields
             $table->enum('review_status', ['pending', 'reviewed', 'needs_revision', 'approved'])->default('pending');
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('reviewed_at')->nullable();
             $table->text('admin_comments')->nullable();
             $table->integer('admin_rating')->nullable();
-            
-            $table->timestamps();
-            
+
             // Indexes
-            $table->index(['task_id', 'report_date']);
-            $table->index(['user_id', 'report_date']);
+            $table->index(['task_id', 'reported_at']);
+            $table->index(['user_id', 'reported_at']);
             $table->index(['review_status', 'created_at']);
-            $table->index('report_date');
+            $table->index('reported_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('task_reports');
-        
+
         // Remove added columns from tasks table
         if (Schema::hasTable('tasks')) {
             Schema::table('tasks', function (Blueprint $table) {
@@ -90,4 +92,5 @@ return new class extends Migration
             });
         }
     }
+
 };

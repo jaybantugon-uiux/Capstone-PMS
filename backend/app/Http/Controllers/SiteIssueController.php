@@ -16,6 +16,7 @@ use App\Notifications\SiteIssueUpdated;
 use App\Notifications\SiteIssueAssigned;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class SiteIssueController extends Controller
 {
@@ -119,7 +120,7 @@ class SiteIssueController extends Controller
         $user = Auth::user();
         
         // Only site coordinators can create issues
-        if ($user->role !== 'sc') {
+        if (!in_array($user->role, ['sc', 'pm', 'admin'])) {
             abort(403);
         }
 
@@ -196,8 +197,10 @@ class SiteIssueController extends Controller
         // ENHANCED: Notify both admins and project managers
         $this->notifyAdminsAndPMsOfNewIssue($siteIssue);
 
-        return redirect()->route('sc.site-issues.show', $siteIssue)
-            ->with('success', 'Site issue reported successfully. Administrators and project managers have been notified.');
+        return response()->json([
+            'message' => 'Site issue reported successfully.',
+            'site_issue' => $siteIssue
+        ], 201);        
     }
 
     /**
@@ -914,5 +917,85 @@ class SiteIssueController extends Controller
             });
 
         return response()->json($recentIssues);
+    }
+
+    public function apiSiteIssue(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!in_array($user->role, ['sc', 'admin'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'project_id'   => 'required|exists:projects,id',
+            'issue_title'  => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'status'       => 'required|string|in:open,in_progress,resolved,closed,escalated',
+            'reported_at' => 'required|date',
+        ]);
+
+        Log::info('Incoming reported_at:', [$request->reported_at]);
+        $timestamp = Carbon::parse($validated['reported_at'])->setTimezone('Asia/Manila');
+        Log::info('Validated payload:', $validated);
+
+
+        $issue = SiteIssue::create([
+            'project_id'    => $validated['project_id'],
+            'issue_title'   => $validated['issue_title'],
+            'description'   => $validated['description'] ?? null,
+            'status'        => $validated['status'],
+            'user_id'       => $user->id,
+            'reported_at'   => $timestamp,
+            'date_reported' => $timestamp->toDateString(),
+        ]);
+
+        return response()->json([
+            'message' => 'Issue submitted successfully',
+            'data'    => [
+                'id'            => $issue->id,
+                'issue_title'   => $issue->issue_title,
+                'description'   => $issue->description,
+                'status'        => $issue->status,
+                'reported_at'   => $issue->reported_at->toISOString(),
+                'date_reported' => $issue->date_reported,
+            ],
+        ], 201);
+    }
+
+
+    public function apiIndex(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'date'       => 'required|date',
+        ]);
+
+        try {
+            $issues = SiteIssue::where('project_id', $validated['project_id'])
+                ->whereDate('reported_at', Carbon::parse($validated['date'])->setTimezone('Asia/Manila'))
+                ->orderByDesc('reported_at')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'issues'  => $issues->map(function ($issue) {
+                    return [
+                        'id'            => $issue->id,
+                        'issue_title'   => $issue->issue_title,
+                        'description'   => $issue->description,
+                        'status'        => $issue->status,
+                        'reported_at'   => $issue->reported_at->toISOString(),
+                        'date_reported' => $issue->date_reported,
+                    ];
+                }),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch site issues.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 }

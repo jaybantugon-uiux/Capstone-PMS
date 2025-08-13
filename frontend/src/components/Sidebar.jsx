@@ -17,7 +17,7 @@ const navLinks = [
   { 
     icon: <DashboardIcon fontSize="medium" />, 
     label: "Dashboard",
-    link: "/admin-dashboard" 
+    link: "/admin-dashboard"
   },
   { 
     icon: <AssignmentIcon fontSize="medium" />, 

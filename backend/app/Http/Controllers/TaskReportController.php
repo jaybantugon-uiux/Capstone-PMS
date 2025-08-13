@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
 
 class TaskReportController extends Controller
 {
@@ -1370,4 +1372,79 @@ class TaskReportController extends Controller
 
         return response()->json(['valid' => true]);
     }
+
+    public function apiReportTask(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!in_array($user->role, ['sc', 'admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'project_id'   => 'required|exists:projects,id',
+            'task_title'   => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'status'       => 'required|string|in:pending,in_progress,completed,delayed,cancelled',
+            'reported_at'  => 'required|date',
+        ]);
+
+        Log::info('Incoming reported_at:', [$request->reported_at]);
+        $timestamp = Carbon::parse($validated['reported_at'])->setTimezone('Asia/Manila');
+        Log::info('Validated payload:', $validated);
+
+        $task = TaskReport::create([
+            'project_id'    => $validated['project_id'],
+            'task_title'    => $validated['task_title'],
+            'description'   => $validated['description'] ?? null,
+            'status'        => $validated['status'],
+            'user_id'       => $user->id,
+            'reported_at'   => $timestamp,
+            'date_reported' => $timestamp->toDateString(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task report submitted successfully',
+            'data'    => [
+                'id'            => $task->id,
+                'task_title'    => $task->task_title,
+                'description'   => $task->description,
+                'status'        => $task->status,
+                'reported_at'   => $task->reported_at->toISOString(),
+                'date_reported' => $task->date_reported,
+            ],
+        ], 201);
+    }
+
+
+    public function apiIndex(Request $request)
+    {
+        $validated = $request->validate([
+            'project_id'  => 'required|exists:projects,id',
+            'report_date' => 'required|date',
+        ]);
+
+        $reports = TaskReport::where('project_id', $validated['project_id'])
+            ->whereDate('date_reported', Carbon::parse($validated['report_date'])->setTimezone('Asia/Manila'))
+            ->get();
+
+            return response()->json([
+                'success' => true,
+                'reports' => $reports->map(function ($report) {
+                    return [
+                        'id'           => $report->id,
+                        'task_title'   => $report->task_title,
+                        'description'  => $report->description,
+                        'status'       => $report->status,
+                        'reported_at'  => $report->reported_at->toISOString(),
+                        'date_reported'=> $report->date_reported,
+                    ];
+                }),
+            ]);            
+    }
+    
 }

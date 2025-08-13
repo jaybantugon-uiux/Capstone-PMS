@@ -6,6 +6,8 @@ use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\TaskReportController;
+use App\Http\Controllers\SiteIssueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +71,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('tasks/active', [TaskController::class, 'active']);
     Route::post('tasks/{task}/archived', [TaskController::class, 'apiArchive']);
     Route::post('tasks/{task}/unarchive', [TaskController::class, 'apiUnarchive']);
+
+    //Projects
+    Route::post('reportIssue', [SiteIssueController::class, 'apiSiteIssue']);
+    Route::post('siteIssue', [SiteIssueController::class, 'apiIndex']);
+    Route::post('submitReport', [TaskReportController::class, 'apiReportTask']);
+    Route::post('taskReport', [TaskReportController::class, 'apiIndex']);
+    Route::get('tasks/archived', [ProjectController::class, 'archived']);
+    Route::post('tasks/active', [ProjectController::class, 'active']);
+    Route::get('/projects/archived', [ProjectController::class, 'apiArchived']);
+    Route::post('/projects/{project}/unarchive', [ProjectController::class, 'apiUnarchive']);
+    Route::post('/projects/{project}/archive', [ProjectController::class, 'apiArchive']);
+
+
 });
 
 // Health check endpoint

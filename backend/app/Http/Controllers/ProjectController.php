@@ -390,25 +390,6 @@ class ProjectController extends Controller
         
         return redirect()->route('projects.archived')->with('success', 'Project restored successfully. Note: Associated tasks remain archived and must be restored individually.');
     }
-    
-    public function archived()
-    {
-        $user = Auth::user();
-        
-        // Only admin and pm can see archived projects
-        if (!in_array($user->role, ['admin', 'pm'])) {
-            abort(403, 'Unauthorized to view archived projects.');
-        }
-        
-        if ($user->role === 'admin') {
-            $projects = Project::where('archived', true)->with('creator')->latest()->paginate(10);
-        } else {
-            $projects = Project::where('created_by', $user->id)
-                ->where('archived', true)->with('creator')->latest()->paginate(10);
-        }
-        
-        return view('projects.archived', compact('projects'));
-    }
 
     public function apiStore(Request $request)
     {
@@ -445,6 +426,122 @@ class ProjectController extends Controller
         return response()->json([
             'success' => true,
             'projects' => $projects,
+        ]);
+    }
+
+    public function apiActive()
+    {
+        try {
+            $user = Auth::user();
+
+            // Optional: Filter based on role if needed
+            if ($user->role === 'pm') {
+                $projects = Project::where('created_by', $user->id)
+                    ->where('archived', false)
+                    ->with(['creator', 'siteCoordinator', 'tasks'])
+                    ->get();
+            } else {
+                $projects = Project::where('archived', false)
+                    ->with(['creator', 'siteCoordinator', 'tasks'])
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'projects' => $projects
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Active projects fetch failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error while fetching active projects.'
+            ], 500);
+        }
+    }
+
+
+    public function archived()
+    {
+        $user = Auth::user();
+        
+        // Only admin and pm can see archived projects
+        if (!in_array($user->role, ['admin', 'pm'])) {
+            abort(403, 'Unauthorized to view archived projects.');
+        }
+        
+        if ($user->role === 'admin') {
+            $projects = Project::where('archived', true)->with('creator')->latest()->paginate(10);
+        } else {
+            $projects = Project::where('created_by', $user->id)
+                ->where('archived', true)->with('creator')->latest()->paginate(10);
+        }
+        
+        return view('projects.archived', compact('projects'));
+    }
+
+    public function apiArchive(Project $project)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($project->archived) {
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Project is already archived.'
+            ]);
+        }
+
+        $project->update(['archived' => true]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Project archived successfully.',
+            'project' => $project
+        ]);
+    }
+
+
+    public function apiArchived()
+    {
+        try {
+            $projects = Project::where('archived', true)->get();
+
+            return response()->json([
+                'success' => true,
+                'projects' => $projects
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Archived fetch failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Server error while fetching archived projects.'
+            ], 500);
+        }
+    }
+
+
+    public function apiUnarchive(Project $project)
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'pm'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (!$project->archived) {
+            return response()->json([
+                'status' => 'info',
+                'message' => 'Project is already active.'
+            ]);
+        }
+
+        $project->update(['archived' => false]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Project unarchived successfully.',
+            'project' => $project
         ]);
     }
 }

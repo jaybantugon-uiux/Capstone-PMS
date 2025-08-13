@@ -118,7 +118,6 @@ const TaskManagement = () => {
       console.error('Error fetching active tasks:', error);
     }
   };
-  
 
   const fetchArchivedTasks = async () => {
     try {
@@ -141,7 +140,6 @@ const TaskManagement = () => {
       console.error('Error fetching archived tasks:', error);
     }
   };  
-  
 
   const fetchUsers = async () => {
     try {
@@ -454,7 +452,7 @@ const TaskManagement = () => {
                           <td>{index + 1}</td>
                           <td>{project.name}</td>
                           <td>{project.description}</td>
-                                                     <td>
+                          <td>
                              {project.start_date
                                ? new Date(project.start_date).toISOString().split('T')[0]
                                : ''}
@@ -496,7 +494,7 @@ const TaskManagement = () => {
                     </thead>
                     <tbody>
                       {tasks
-                        .filter(task => !task.archived) // Only show active tasks
+                        .filter(task => !task.archived)
                         .map((task, index) => (
                           <tr key={task.id}>
                             <td>{index + 1}</td>

@@ -6,16 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('site_issues', function (Blueprint $table) {
             $table->id();
+
+            // Foreign keys
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
-            $table->foreignId('task_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('task_id')->nullable();
+            $table->foreign('task_id', 'site_issues_task_id_foreign')
+                  ->references('id')->on('tasks')
+                  ->onDelete('set null');
+
             $table->foreignId('user_id')->constrained()->onDelete('cascade')->comment('Site coordinator who reported the issue');
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null')->comment('Admin/PM assigned to handle the issue');
+            $table->foreignId('resolved_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('acknowledged_by')->nullable()->constrained('users')->onDelete('set null');
+
+            // Core issue fields
             $table->string('issue_title');
             $table->enum('issue_type', ['safety', 'equipment', 'environmental', 'personnel', 'quality', 'timeline', 'other'])->default('other');
             $table->enum('priority', ['low', 'medium', 'high', 'critical'])->default('medium');
@@ -26,24 +34,22 @@ return new class extends Migration
             $table->text('immediate_actions_taken')->nullable();
             $table->text('suggested_solutions')->nullable();
             $table->decimal('estimated_cost', 10, 2)->nullable();
+
+            // Media
             $table->json('photos')->nullable()->comment('Array of photo file paths');
             $table->json('attachments')->nullable()->comment('Array of attachment file paths');
-            
-            // Admin management fields
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null')->comment('Admin/PM assigned to handle the issue');
+
+            // Admin workflow
             $table->text('admin_notes')->nullable();
             $table->text('resolution_description')->nullable();
             $table->timestamp('resolved_at')->nullable();
-            $table->foreignId('resolved_by')->nullable()->constrained('users')->onDelete('set null');
-            
-            // Timeline tracking
-            $table->timestamp('reported_at')->useCurrent();
             $table->timestamp('acknowledged_at')->nullable();
-            $table->foreignId('acknowledged_by')->nullable()->constrained('users')->onDelete('set null');
-            
+
+            // Timeline
+            $table->dateTime('reported_at')->nullable();
             $table->timestamps();
-            
-            // Indexes for performance
+
+            // Indexes
             $table->index(['project_id', 'status']);
             $table->index(['user_id', 'reported_at']);
             $table->index(['status', 'priority']);
@@ -63,16 +69,14 @@ return new class extends Migration
             $table->boolean('is_internal')->default(false)->comment('Internal admin comments vs external visible to SC');
             $table->json('attachments')->nullable();
             $table->timestamps();
-            
+
+            // Indexes
             $table->index(['site_issue_id', 'created_at']);
             $table->index(['user_id']);
             $table->index(['is_internal']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('site_issue_comments');

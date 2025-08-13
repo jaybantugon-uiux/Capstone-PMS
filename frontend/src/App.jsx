@@ -10,6 +10,7 @@ import ChangePassword from './pages/ChangePassword';
 import VerifyEmail from './pages/VerifyEmail';
 
 import AdminDashboard from './dashboard/Admin';
+import SiteCoordinatorDashboard from './dashboard/SiteCoordinator';
 //import PMDashboard from './dashboard/ProjectManager';
 
 import TaskPage from "./pages/TaskManagement";
@@ -31,6 +32,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/sc-dashboard" element={<SiteCoordinatorDashboard />} />
         <Route path="/task" element={<TaskPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/files" element={<FilePage />} />
