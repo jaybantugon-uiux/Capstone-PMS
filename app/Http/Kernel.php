@@ -69,6 +69,7 @@ class Kernel extends HttpKernel
         // Custom middleware aliases
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'check.user.status' => \App\Http\Middleware\CheckUserStatus::class,
+        'check.role' => \App\Http\Middleware\CheckRole::class,
     ];
 }
 

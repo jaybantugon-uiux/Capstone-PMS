@@ -469,6 +469,147 @@
         </div>
     </div>
 
+    <!-- Expense Liquidation Management Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="card-title text-success mb-2">
+                                <i class="fas fa-money-bill-wave me-2"></i>Expense Liquidation Management
+                            </h5>
+                            <p class="text-muted mb-0">Submit and manage daily expenditures for your projects</p>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-receipt fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Expense Liquidation Statistics -->
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-primary mb-1">{{ $expenseLiquidationStats['total_expenditures'] ?? 0 }}</h5>
+                                <small class="text-muted">Total Expenditures</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-warning mb-1">{{ $expenseLiquidationStats['draft_expenditures'] ?? 0 }}</h5>
+                                <small class="text-muted">Draft</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-info mb-1">{{ $expenseLiquidationStats['submitted_expenditures'] ?? 0 }}</h5>
+                                <small class="text-muted">Submitted</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-secondary mb-1">₱{{ number_format($expenseLiquidationStats['total_amount'] ?? 0, 0) }}</h5>
+                                <small class="text-muted">Total Amount</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('pm.expenditures.index') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-list me-1"></i>All Expenditures
+                        </a>
+                        <a href="{{ route('pm.expenditures.create') }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-plus me-1"></i>New Expenditure
+                        </a>
+                        @if(isset($expenseLiquidationStats['draft_expenditures']) && $expenseLiquidationStats['draft_expenditures'] > 0)
+                            <a href="{{ route('pm.expenditures.index', ['status' => 'draft']) }}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-edit me-1"></i>Draft ({{ $expenseLiquidationStats['draft_expenditures'] }})
+                            </a>
+                        @endif
+                        <a href="{{ route('pm.expenditures.bulk-submit') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-double me-1"></i>Bulk Submit
+                        </a>
+                        <a href="{{ route('pm.expenditures.export') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-download me-1"></i>Export
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liquidated Forms Management Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="card-title text-info mb-2">
+                                <i class="fas fa-file-invoice me-2"></i>Liquidated Forms Management
+                            </h5>
+                            <p class="text-muted mb-0">View and manage liquidated forms for your projects</p>
+                        </div>
+                        <div class="text-info">
+                            <i class="fas fa-file-alt fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Liquidated Forms Statistics -->
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-primary mb-1">{{ $liquidatedFormsStats['total'] ?? 0 }}</h5>
+                                <small class="text-muted">Total Forms</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-warning mb-1">{{ $liquidatedFormsStats['pending'] ?? 0 }}</h5>
+                                <small class="text-muted">Pending</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-info mb-1">{{ $liquidatedFormsStats['under_review'] ?? 0 }}</h5>
+                                <small class="text-muted">Under Review</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-danger mb-1">{{ $liquidatedFormsStats['flagged'] ?? 0 }}</h5>
+                                <small class="text-muted">Flagged</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <h5 class="text-secondary mb-1">₱{{ number_format($liquidatedFormsStats['total_amount'] ?? 0, 0) }}</h5>
+                                <small class="text-muted">Total Amount</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('pm.liquidated-forms.index') }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-list me-1"></i>All Forms
+                        </a>
+                        @if(isset($liquidatedFormsStats['pending']) && $liquidatedFormsStats['pending'] > 0)
+                            <a href="{{ route('pm.liquidated-forms.index', ['status' => 'pending']) }}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-clock me-1"></i>Pending ({{ $liquidatedFormsStats['pending'] }})
+                            </a>
+                        @endif
+                        @if(isset($liquidatedFormsStats['flagged']) && $liquidatedFormsStats['flagged'] > 0)
+                            <a href="{{ route('pm.liquidated-forms.index', ['status' => 'flagged']) }}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-flag me-1"></i>Flagged ({{ $liquidatedFormsStats['flagged'] }})
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Project Progress and Recent Task Reports -->
     <div class="row mb-4">
         <div class="col-md-8">
@@ -820,6 +961,84 @@
                 </div>
             </div>
         </div>
+
+        <!-- NEW: Recent Expenditures Card -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Expenditures</h5>
+                </div>
+                <div class="card-body">
+                    @if(isset($recentExpenditures) && $recentExpenditures->count() > 0)
+                        @foreach($recentExpenditures->take(4) as $expenditure)
+                            <div class="mb-2 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <a href="{{ route('pm.expenditures.show', $expenditure) }}">{{ Str::limit($expenditure->description, 25) }}</a>
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ $expenditure->project ? $expenditure->project->name : 'No Project' }}
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ ucfirst($expenditure->category) }} • {{ ucfirst($expenditure->payment_method) }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-{{ $expenditure->status_badge_color }}">
+                                            {{ $expenditure->formatted_status }}
+                                        </span>
+                                        <br>
+                                        <small class="text-success fw-bold">${{ number_format($expenditure->amount, 2) }}</small>
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        {{ $expenditure->created_at->diffForHumans() }}
+                                        @if($expenditure->receipts_count > 0)
+                                            <span class="badge bg-info ms-1">
+                                                <i class="fas fa-receipt"></i> {{ $expenditure->receipts_count }}
+                                            </span>
+                                        @endif
+                                        @if($expenditure->status === 'draft')
+                                            <button class="btn btn-success btn-xs mt-1" onclick="quickSubmitExpenditure({{ $expenditure->id }})">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        @endif
+                                    </small>
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="text-center mt-2">
+                            <a href="{{ route('pm.expenditures.index') }}" class="btn btn-sm btn-outline-success">View All Expenditures</a>
+                        </div>
+                    @else
+                        <div class="text-center py-3">
+                            <i class="fas fa-money-bill-wave fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-2">No recent expenditures</p>
+                            <a href="{{ route('pm.expenditures.create') }}" class="btn btn-sm btn-outline-success">Create Expenditure</a>
+                        </div>
+                    @endif
+
+                    @if(isset($pendingExpenditures) && $pendingExpenditures->count() > 0)
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="text-warning">
+                                <i class="fas fa-clock me-1"></i>Pending Submission
+                            </h6>
+                            @foreach($pendingExpenditures->take(2) as $expenditure)
+                                <div class="mb-1">
+                                    <small class="text-muted">
+                                        <strong>{{ Str::limit($expenditure->description, 20) }}</strong><br>
+                                        ${{ number_format($expenditure->amount, 2) }} • {{ $expenditure->project->name ?? 'No Project' }}
+                                    </small>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Actions -->
@@ -874,6 +1093,12 @@
                             <a href="{{ route('admin.progress-reports.create') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                 <i class="fas fa-file-chart-line fa-2x mb-2"></i>
                                 <span>New Report</span>
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('pm.expenditures.create') }}" class="btn btn-outline-success w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                                <span>New Expenditure</span>
                             </a>
                         </div>
                     </div>
@@ -1094,6 +1319,52 @@
                         </div>
                         <a href="{{ route('pm.task-reports.index') }}" class="btn btn-secondary btn-sm ms-2">
                             <i class="fas fa-search me-1"></i>Check Tasks
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- NEW: Expense Liquidation Alerts -->
+    @if(isset($pendingExpenditures) && $pendingExpenditures->count() > 0)
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert alert-warning">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-money-bill-wave fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>Pending Expenditures!</strong><br>
+                            You have {{ $pendingExpenditures->count() }} draft expenditures that need to be submitted for processing.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('pm.expenditures.index', ['status' => 'draft']) }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit me-1"></i>Review Drafts
+                            </a>
+                            <a href="{{ route('pm.expenditures.bulk-submit') }}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-check-double me-1"></i>Bulk Submit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+
+
+    @if(isset($expenseLiquidationStats['total_amount']) && $expenseLiquidationStats['total_amount'] > 10000)
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-line fa-2x me-3"></i>
+                        <div class="flex-grow-1">
+                            <strong>High Expenditure Volume!</strong><br>
+                            Your total expenditures amount to ₱{{ number_format($expenseLiquidationStats['total_amount'], 0) }}. Consider reviewing your expense patterns.
+                        </div>
+                        <a href="{{ route('pm.expenditures.summary-report') }}" class="btn btn-info btn-sm ms-2">
+                            <i class="fas fa-chart-bar me-1"></i>View Summary
                         </a>
                     </div>
                 </div>
@@ -1602,6 +1873,67 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // This would typically involve creating a calendar event or notification
         alert(`Maintenance reminder set for ${reminderDate.toDateString()}`);
+    };
+
+    // NEW: Expense liquidation functions
+    window.quickSubmitExpenditure = function(expenditureId) {
+        if (confirm('Are you sure you want to submit this expenditure?')) {
+            fetch(`/pm/expenditures/${expenditureId}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error submitting expenditure: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting expenditure');
+            });
+        }
+    };
+
+    window.quickSubmitAllExpenditures = function() {
+        if (confirm('Are you sure you want to submit all draft expenditures?')) {
+            fetch('{{ route("pm.expenditures.bulk-submit") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    action: 'submit_all_drafts'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error during bulk submission');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error during bulk submission');
+            });
+        }
+    };
+
+    window.viewExpenditureDetails = function(expenditureId) {
+        window.open(`/pm/expenditures/${expenditureId}`, '_blank');
+    };
+
+    window.exportExpenditures = function(format = 'csv') {
+        const url = `{{ route('pm.expenditures.export') }}?format=${format}`;
+        window.open(url, '_blank');
     };
 
     // Auto-dismiss alerts after 10 seconds

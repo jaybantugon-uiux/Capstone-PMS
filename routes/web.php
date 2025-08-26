@@ -15,7 +15,11 @@ use App\Http\Controllers\SitePhotoController;
 use App\Http\Controllers\ProgressReportController;
 use App\Http\Controllers\ClientProjectController; 
 use App\Http\Controllers\ClientNotificationPreferencesController; 
-use App\Http\Controllers\EquipmentMonitoringController; 
+use App\Http\Controllers\EquipmentMonitoringController;
+use App\Http\Controllers\DailyExpenditureController;
+use App\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\LiquidatedFormController; 
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -148,6 +152,74 @@ Route::get('/admin-dashboard', function() {
         ->get();
 
     // ====================================================================
+    // EXPENSE LIQUIDATION SUBSYSTEM STATISTICS
+    // ====================================================================
+    
+    // Liquidated Forms Statistics
+    $liquidatedFormsStats = [
+        'total' => \App\Models\LiquidatedForm::count(),
+        'pending' => \App\Models\LiquidatedForm::where('status', 'pending')->count(),
+        'under_review' => \App\Models\LiquidatedForm::where('status', 'under_review')->count(),
+        'processed' => \App\Models\LiquidatedForm::where('status', 'processed')->count(),
+        'flagged' => \App\Models\LiquidatedForm::where('status', 'flagged')->count(),
+        'revision_requested' => \App\Models\LiquidatedForm::where('status', 'revision_requested')->count(),
+        'clarification_requested' => \App\Models\LiquidatedForm::where('status', 'clarification_requested')->count(),
+        'total_amount' => \App\Models\LiquidatedForm::sum('total_amount'),
+        'total_receipts' => \App\Models\LiquidatedForm::sum('total_receipts'),
+        'variance_amount' => \App\Models\LiquidatedForm::sum('variance_amount'),
+        'recent' => \App\Models\LiquidatedForm::where('created_at', '>=', now()->subDays(7))->count(),
+    ];
+
+    // Recent Liquidated Forms
+    $recentLiquidatedForms = \App\Models\LiquidatedForm::with(['project', 'preparer', 'reviewer'])
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Financial Reports Statistics
+    $financialReportsStats = [
+        'total' => \App\Models\FinancialReport::count(),
+        'draft' => \App\Models\FinancialReport::where('status', 'draft')->count(),
+        'generated' => \App\Models\FinancialReport::where('status', 'generated')->count(),
+        'liquidated' => \App\Models\FinancialReport::where('status', 'liquidated')->count(),
+        'total_expenditures' => \App\Models\FinancialReport::sum('total_expenditures'),
+        'total_receipts' => \App\Models\FinancialReport::sum('total_receipts'),
+        'recent' => \App\Models\FinancialReport::where('created_at', '>=', now()->subDays(7))->count(),
+    ];
+
+    // Recent Financial Reports
+    $recentFinancialReports = \App\Models\FinancialReport::with(['project', 'creator'])
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Daily Expenditures Statistics
+    $dailyExpendituresStats = [
+        'total' => \App\Models\DailyExpenditure::count(),
+        'total_amount' => \App\Models\DailyExpenditure::sum('amount'),
+        'recent' => \App\Models\DailyExpenditure::where('created_at', '>=', now()->subDays(7))->count(),
+    ];
+
+    // Recent Daily Expenditures
+    $recentDailyExpenditures = \App\Models\DailyExpenditure::with(['project', 'submitter'])
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Receipts Statistics
+    $receiptsStats = [
+        'total' => \App\Models\Receipt::count(),
+        'total_amount' => \App\Models\Receipt::sum('amount'),
+        'recent' => \App\Models\Receipt::where('created_at', '>=', now()->subDays(7))->count(),
+    ];
+
+    // Recent Receipts
+    $recentReceipts = \App\Models\Receipt::with(['uploader'])
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // ====================================================================
     // ADMIN PERSONAL EQUIPMENT STATISTICS (Like Site Coordinator)
     // ====================================================================
     
@@ -240,7 +312,15 @@ Route::get('/admin-dashboard', function() {
         'progressReportsStats',
         'recentProgressReports',
         'equipmentMonitoringStats',
-        'adminEquipmentStats'  
+        'adminEquipmentStats',
+        'liquidatedFormsStats',
+        'recentLiquidatedForms',
+        'financialReportsStats',
+        'recentFinancialReports',
+        'dailyExpendituresStats',
+        'recentDailyExpenditures',
+        'receiptsStats',
+        'recentReceipts'
     ));
 })->middleware('role:admin')->name('admin.dashboard');
     
@@ -249,7 +329,73 @@ Route::get('/admin-dashboard', function() {
     })->middleware('role:emp')->name('employee.dashboard');
     
     Route::get('/finance-dashboard', function() { 
-        return view('finance.dashboard'); 
+        // Get liquidated forms statistics
+        $liquidatedFormsCount = \App\Models\LiquidatedForm::count();
+        $pendingReviewCount = \App\Models\LiquidatedForm::where('status', 'pending')->count();
+        $flaggedFormsCount = \App\Models\LiquidatedForm::where('status', 'flagged')->count();
+        $totalAmountProcessed = \App\Models\LiquidatedForm::where('status', 'approved')->sum('total_amount');
+
+        // Get expenditures statistics
+        $dailyExpendituresCount = \App\Models\DailyExpenditure::count();
+        $submittedExpendituresCount = \App\Models\DailyExpenditure::where('status', 'submitted')->count();
+        $totalExpendituresAmount = \App\Models\DailyExpenditure::sum('amount');
+        $pendingExpendituresAmount = \App\Models\DailyExpenditure::where('status', 'submitted')->sum('amount');
+
+        // Get financial reports statistics
+        $financialReportsCount = \App\Models\FinancialReport::count();
+        $generatedReportsCount = \App\Models\FinancialReport::where('status', 'generated')->count();
+        $receiptsCount = \App\Models\Receipt::count();
+
+        // Recent liquidated forms
+        $recentLiquidatedForms = \App\Models\LiquidatedForm::with(['project', 'preparer'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Recent financial reports
+        $recentFinancialReports = \App\Models\FinancialReport::with(['project'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Recent receipts
+        $recentReceipts = \App\Models\Receipt::with(['uploader'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Status summary - Only pending and flagged
+        $statusSummary = [
+            'pending' => \App\Models\LiquidatedForm::where('status', 'pending')->count(),
+            'flagged' => \App\Models\LiquidatedForm::where('status', 'flagged')->count(),
+        ];
+
+        // Calculate percentages for pending and flagged only
+        $total = array_sum($statusSummary);
+        $statusSummary['pending_percentage'] = $total > 0 ? ($statusSummary['pending'] / $total) * 100 : 0;
+        $statusSummary['flagged_percentage'] = $total > 0 ? ($statusSummary['flagged'] / $total) * 100 : 0;
+
+        // Recent alerts (placeholder - you can customize this based on your needs)
+        $recentAlerts = collect([]);
+
+        return view('finance.dashboard', compact(
+            'liquidatedFormsCount',
+            'pendingReviewCount', 
+            'flaggedFormsCount',
+            'totalAmountProcessed',
+            'dailyExpendituresCount',
+            'submittedExpendituresCount',
+            'totalExpendituresAmount',
+            'pendingExpendituresAmount',
+            'financialReportsCount',
+            'generatedReportsCount',
+            'receiptsCount',
+            'recentLiquidatedForms',
+            'recentFinancialReports',
+            'recentReceipts',
+            'statusSummary',
+            'recentAlerts'
+        )); 
     })->middleware('role:finance')->name('finance.dashboard');
     
     Route::get('/pm-dashboard', [DashboardController::class, 'pmDashboard'])
@@ -2220,6 +2366,362 @@ Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function
         })->name('mark-all-read');
     });
 
+    // ====================================================================
+// PROJECT MANAGER ROUTES - Daily Expenditures
+// ====================================================================
+Route::middleware(['auth', 'verified', 'role:pm,admin'])->prefix('pm')->name('pm.')->group(function () {
+    Route::prefix('expenditures')->name('expenditures.')->group(function () {
+        Route::get('/', [DailyExpenditureController::class, 'pmIndex'])->name('index');
+        Route::get('/create', [DailyExpenditureController::class, 'create'])->name('create');
+        Route::post('/', [DailyExpenditureController::class, 'store'])->name('store');
+        Route::get('/{expenditure}', [DailyExpenditureController::class, 'show'])->name('show');
+        Route::get('/{expenditure}/edit', [DailyExpenditureController::class, 'edit'])->name('edit');
+        Route::put('/{expenditure}', [DailyExpenditureController::class, 'update'])->name('update');
+        Route::delete('/{expenditure}', [DailyExpenditureController::class, 'destroy'])->name('destroy');
+        
+        // Submit expenditure for approval
+        Route::post('/{expenditure}/submit', [DailyExpenditureController::class, 'submit'])->name('submit');
+        
+        // Bulk operations
+        Route::post('/bulk-submit', [DailyExpenditureController::class, 'bulkSubmit'])->name('bulk-submit');
+        Route::post('/bulk-delete', [DailyExpenditureController::class, 'bulkDelete'])->name('bulk-delete');
+        
+        // Export
+        Route::get('/export', [DailyExpenditureController::class, 'export'])->name('export');
+        Route::get('/export/csv', [DailyExpenditureController::class, 'exportCSV'])->name('export.csv');
+        Route::get('/export/pdf', [DailyExpenditureController::class, 'exportPDF'])->name('export.pdf');
+        
+        // Reports and analytics
+        Route::get('/reports/summary', [DailyExpenditureController::class, 'summaryReport'])->name('reports.summary');
+        Route::get('/reports/monthly', [DailyExpenditureController::class, 'monthlyReport'])->name('reports.monthly');
+        
+        // Statistics
+        Route::get('/stats', [DailyExpenditureController::class, 'stats'])->name('stats');
+    });
+});
+
+// ====================================================================
+// FINANCE ROUTES - All Finance Operations
+// ====================================================================
+Route::middleware(['auth', 'verified', 'role:finance,admin'])->prefix('finance')->name('finance.')->group(function () {
+    
+    // Daily Expenditures Management
+    Route::prefix('expenditures')->name('expenditures.')->group(function () {
+        Route::get('/', [DailyExpenditureController::class, 'financeIndex'])->name('index');
+        Route::get('/{expenditure}', [DailyExpenditureController::class, 'financeShow'])->name('show');
+            
+        // Export
+        Route::get('/export/csv', [DailyExpenditureController::class, 'financeExportCSV'])->name('export.csv');
+    });
+    
+    // Financial Reports Management
+    Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
+        Route::get('/', [FinancialReportController::class, 'index'])->name('index');
+        Route::get('/create', [FinancialReportController::class, 'create'])->name('create');
+        Route::post('/', [FinancialReportController::class, 'store'])->name('store');
+        Route::get('/{financialReport}', [FinancialReportController::class, 'show'])->name('show');
+        Route::get('/{financialReport}/edit', [FinancialReportController::class, 'edit'])->name('edit');
+        Route::put('/{financialReport}', [FinancialReportController::class, 'update'])->name('update');
+        Route::delete('/{financialReport}', [FinancialReportController::class, 'destroy'])->name('destroy');
+        
+        // Generate report
+        Route::post('/{financialReport}/generate', [FinancialReportController::class, 'generate'])->name('generate');
+        
+        // Auto-create liquidated form from financial report
+        Route::post('/{financialReport}/create-liquidated-form', [FinancialReportController::class, 'createLiquidatedForm'])->name('create-liquidated-form');
+        
+        // Export options
+        Route::get('/{financialReport}/export/pdf', [FinancialReportController::class, 'exportPDF'])->name('export.pdf');
+        Route::get('/{financialReport}/export/excel', [FinancialReportController::class, 'exportExcel'])->name('export.excel');
+    });
+    
+    // Receipts Management
+    Route::prefix('receipts')->name('receipts.')->group(function () {
+        Route::get('/', [ReceiptController::class, 'index'])->name('index');
+        Route::get('/create', [ReceiptController::class, 'create'])->name('create');
+        Route::post('/', [ReceiptController::class, 'store'])->name('store');
+        Route::get('/{receipt}', [ReceiptController::class, 'show'])->name('show');
+        Route::get('/{receipt}/edit', [ReceiptController::class, 'edit'])->name('edit');
+        Route::put('/{receipt}', [ReceiptController::class, 'update'])->name('update');
+        Route::delete('/{receipt}', [ReceiptController::class, 'destroy'])->name('destroy');
+        
+        // Upload receipts
+        Route::post('/upload', [ReceiptController::class, 'upload'])->name('upload');
+        Route::post('/bulk-upload', [ReceiptController::class, 'bulkUpload'])->name('bulk-upload');
+        
+        // Bulk operations
+        Route::delete('/bulk-delete', [ReceiptController::class, 'bulkDelete'])->name('bulk-delete');
+        
+        // Download receipt files
+        Route::get('/{receipt}/download', [ReceiptController::class, 'download'])->name('download');
+        
+        // Receipt matching to expenditures
+        
+        Route::post('/{receipt}/match-financial-report', [ReceiptController::class, 'matchToFinancialReport'])->name('match-financial-report');
+        
+        
+        // Special reports
+        Route::get('/orphaned', [ReceiptController::class, 'orphanedReceipts'])->name('orphaned');
+        Route::get('/duplicates', [ReceiptController::class, 'duplicateReceipts'])->name('duplicates');
+    });
+    
+    // Liquidated Forms Management
+    Route::prefix('liquidated-forms')->name('liquidated-forms.')->group(function () {
+        Route::get('/', [LiquidatedFormController::class, 'financeIndex'])->name('index');
+        Route::get('/suspicious-activities', [LiquidatedFormController::class, 'suspiciousActivities'])->name('suspicious-activities');
+        Route::get('/{liquidatedForm}', [LiquidatedFormController::class, 'financeShow'])->name('show');
+        Route::get('/{liquidatedForm}/edit', [LiquidatedFormController::class, 'financeEdit'])->name('edit');
+        Route::put('/{liquidatedForm}', [LiquidatedFormController::class, 'financeUpdate'])->name('update');
+        
+        // Flag suspicious activities
+        Route::get('/{liquidatedForm}/flag', [LiquidatedFormController::class, 'flagForm'])->name('flag.form');
+        Route::post('/{liquidatedForm}/flag', [LiquidatedFormController::class, 'flag'])->name('flag');
+        Route::get('/{liquidatedForm}/unflag', [LiquidatedFormController::class, 'unflagForm'])->name('unflag.form');
+        Route::post('/{liquidatedForm}/unflag', [LiquidatedFormController::class, 'unflag'])->name('unflag');
+     
+        // Print liquidated forms
+        Route::get('/{liquidatedForm}/print', [LiquidatedFormController::class, 'print'])->name('print');
+        Route::post('/{liquidatedForm}/mark-printed', [LiquidatedFormController::class, 'markPrinted'])->name('mark-printed');
+        
+        // Bulk operations
+        Route::post('/bulk-flag', [LiquidatedFormController::class, 'bulkFlag'])->name('bulk-flag');
+        Route::post('/bulk-unflag', [LiquidatedFormController::class, 'bulkUnflag'])->name('bulk-unflag');
+        Route::post('/bulk-print', [LiquidatedFormController::class, 'bulkPrint'])->name('bulk-print');
+        
+        // Export and reports
+        Route::get('/export/csv', [LiquidatedFormController::class, 'financeExportCSV'])->name('export.csv');
+        Route::get('/reports/flagged', [LiquidatedFormController::class, 'flaggedReport'])->name('reports.flagged');
+
+    });
+    
+    // Finance notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/{notification}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
+        Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-as-read');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    });
+});
+
+// ====================================================================
+// ADMIN ROUTES - Full Administrative Control
+// ====================================================================
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // Daily Expenditures Administration
+    Route::prefix('expenditures')->name('expenditures.')->group(function () {
+        Route::get('/', [DailyExpenditureController::class, 'adminIndex'])->name('index');
+        Route::get('/create', [DailyExpenditureController::class, 'adminCreate'])->name('create');
+        Route::post('/', [DailyExpenditureController::class, 'adminStore'])->name('store');
+        Route::get('/{expenditure}', [DailyExpenditureController::class, 'adminShow'])->name('show');
+        Route::get('/{expenditure}/edit', [DailyExpenditureController::class, 'adminEdit'])->name('edit');
+        Route::put('/{expenditure}', [DailyExpenditureController::class, 'adminUpdate'])->name('update');
+        Route::delete('/{expenditure}', [DailyExpenditureController::class, 'adminDestroy'])->name('destroy');
+        
+        
+        // Admin bulk operations
+        Route::post('/bulk-action', [DailyExpenditureController::class, 'adminBulkAction'])->name('bulk-action');
+        
+        // Advanced reporting
+        Route::get('/reports/detailed', [DailyExpenditureController::class, 'detailedReport'])->name('reports.detailed');
+        Route::get('/reports/analytics', [DailyExpenditureController::class, 'analytics'])->name('reports.analytics');
+    });
+    
+    // Financial Reports Administration
+    Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
+        Route::get('/', [FinancialReportController::class, 'adminIndex'])->name('index');
+        Route::get('/create', [FinancialReportController::class, 'adminCreate'])->name('create');
+        Route::post('/', [FinancialReportController::class, 'adminStore'])->name('store');
+        Route::get('/{financialReport}', [FinancialReportController::class, 'adminShow'])->name('show');
+        Route::get('/{financialReport}/edit', [FinancialReportController::class, 'adminEdit'])->name('edit');
+        Route::put('/{financialReport}', [FinancialReportController::class, 'adminUpdate'])->name('update');
+        Route::delete('/{financialReport}', [FinancialReportController::class, 'adminDestroy'])->name('destroy');
+        
+        // Force generate/regenerate
+        Route::post('/{financialReport}/force-generate', [FinancialReportController::class, 'forceGenerate'])->name('force-generate');
+        
+        // Admin bulk operations
+        Route::post('/bulk-action', [FinancialReportController::class, 'adminBulkAction'])->name('bulk-action');
+    });
+    
+    // Liquidated Forms Administration
+    Route::prefix('liquidated-forms')->name('liquidated-forms.')->group(function () {
+        Route::get('/', [LiquidatedFormController::class, 'adminIndex'])->name('index');
+        Route::get('/create', [LiquidatedFormController::class, 'adminCreate'])->name('create');
+        Route::post('/', [LiquidatedFormController::class, 'adminStore'])->name('store');
+        Route::get('/{liquidatedForm}', [LiquidatedFormController::class, 'adminShow'])->name('show');
+        Route::get('/{liquidatedForm}/edit', [LiquidatedFormController::class, 'adminEdit'])->name('edit');
+        Route::put('/{liquidatedForm}', [LiquidatedFormController::class, 'adminUpdate'])->name('update');
+        Route::delete('/{liquidatedForm}', [LiquidatedFormController::class, 'adminDestroy'])->name('destroy');
+        
+        // Admin revision management
+        Route::get('/{liquidatedForm}/request-revision', [LiquidatedFormController::class, 'requestRevisionForm'])->name('request-revision.form');
+        Route::post('/{liquidatedForm}/request-revision', [LiquidatedFormController::class, 'requestRevision'])->name('request-revision');
+        Route::get('/{liquidatedForm}/approve-revision', [LiquidatedFormController::class, 'approveRevisionForm'])->name('approve-revision.form');
+                Route::post('/{liquidatedForm}/approve-revision', [LiquidatedFormController::class, 'approveRevision'])->name('approve-revision');
+        
+        // Admin flag management
+        Route::get('/{liquidatedForm}/admin-flag', [LiquidatedFormController::class, 'adminFlagForm'])->name('admin-flag.form');
+        Route::post('/{liquidatedForm}/admin-flag', [LiquidatedFormController::class, 'adminFlag'])->name('admin-flag');
+        Route::get('/{liquidatedForm}/admin-unflag', [LiquidatedFormController::class, 'adminUnflagForm'])->name('admin-unflag.form');
+        Route::post('/{liquidatedForm}/admin-unflag', [LiquidatedFormController::class, 'adminUnflag'])->name('admin-unflag');
+        
+        // Revision history
+        Route::get('/{liquidatedForm}/revisions', [LiquidatedFormController::class, 'revisionHistory'])->name('revisions');
+        Route::get('/{liquidatedForm}/revisions/{revision}', [LiquidatedFormController::class, 'showRevision'])->name('show-revision');
+        
+        // Admin bulk operations
+        Route::post('/bulk-action', [LiquidatedFormController::class, 'adminBulkAction'])->name('bulk-action');
+        
+        // Finance methods that admin should have access to
+        Route::get('/suspicious-activities', [LiquidatedFormController::class, 'suspiciousActivities'])->name('suspicious-activities');
+        Route::get('/{liquidatedForm}/flag', [LiquidatedFormController::class, 'flagForm'])->name('flag.form');
+        Route::post('/{liquidatedForm}/flag', [LiquidatedFormController::class, 'flag'])->name('flag');
+        Route::get('/{liquidatedForm}/unflag', [LiquidatedFormController::class, 'unflagForm'])->name('unflag.form');
+        Route::post('/{liquidatedForm}/unflag', [LiquidatedFormController::class, 'unflag'])->name('unflag');
+        Route::get('/{liquidatedForm}/print', [LiquidatedFormController::class, 'print'])->name('print');
+        Route::post('/{liquidatedForm}/mark-printed', [LiquidatedFormController::class, 'markPrinted'])->name('mark-printed');
+        Route::post('/bulk-flag', [LiquidatedFormController::class, 'bulkFlag'])->name('bulk-flag');
+        Route::post('/bulk-unflag', [LiquidatedFormController::class, 'bulkUnflag'])->name('bulk-unflag');
+        Route::post('/bulk-print', [LiquidatedFormController::class, 'bulkPrint'])->name('bulk-print');
+        Route::get('/export/csv', [LiquidatedFormController::class, 'financeExportCSV'])->name('export.csv');
+        Route::get('/reports/flagged', [LiquidatedFormController::class, 'flaggedReport'])->name('reports.flagged');
+        
+        // Advanced admin reports
+        Route::get('/reports/audit', [LiquidatedFormController::class, 'auditReport'])->name('reports.audit');
+        Route::get('/reports/compliance', [LiquidatedFormController::class, 'complianceReport'])->name('reports.compliance');
+    });
+    
+    // Receipts Administration
+    Route::prefix('receipts')->name('receipts.')->group(function () {
+        Route::get('/', [ReceiptController::class, 'adminIndex'])->name('index');
+        Route::get('/create', [ReceiptController::class, 'adminCreate'])->name('create');
+        Route::post('/', [ReceiptController::class, 'adminStore'])->name('store');
+        Route::get('/{receipt}', [ReceiptController::class, 'adminShow'])->name('show');
+        Route::get('/{receipt}/edit', [ReceiptController::class, 'adminEdit'])->name('edit');
+        Route::put('/{receipt}', [ReceiptController::class, 'adminUpdate'])->name('update');
+        Route::delete('/{receipt}', [ReceiptController::class, 'adminDestroy'])->name('destroy');
+        
+        // Download receipt files
+        Route::get('/{receipt}/download', [ReceiptController::class, 'download'])->name('download');
+        
+        // Admin bulk operations
+        Route::post('/bulk-action', [ReceiptController::class, 'adminBulkAction'])->name('bulk-action');
+        
+        // Advanced receipt management
+        Route::get('/orphaned', [ReceiptController::class, 'adminOrphanedReceipts'])->name('orphaned');
+        Route::get('/duplicates', [ReceiptController::class, 'adminDuplicateReceipts'])->name('duplicates');
+        Route::post('/merge-duplicates', [ReceiptController::class, 'adminMergeDuplicates'])->name('merge-duplicates');
+        
+        // Admin clarification management
+        Route::get('/{receipt}/request-clarification', [ReceiptController::class, 'adminRequestClarificationForm'])->name('request-clarification.form');
+        Route::post('/{receipt}/request-clarification', [ReceiptController::class, 'adminRequestClarification'])->name('request-clarification');
+        Route::get('/{receipt}/resolve-clarification', [ReceiptController::class, 'adminResolveClarificationForm'])->name('resolve-clarification.form');
+        Route::post('/{receipt}/resolve-clarification', [ReceiptController::class, 'adminResolveClarification'])->name('resolve-clarification');
+    });
+    
+
+
+    // Main analytics dashboard
+    Route::get('/analytics', function() {
+        return view('admin.analytics.index');
+    })->name('analytics.index');
+});
+
+// ====================================================================
+// SHARED ROUTES (All authenticated users with appropriate roles)
+// ====================================================================
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // View-only routes for general access
+    Route::prefix('expense-system')->name('expense-system.')->group(function () {
+        
+        // Dashboard for all users (role-specific views)
+        Route::get('/dashboard', function() {
+            $user = auth()->user();
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->route('admin.dashboard');
+                case 'finance':
+                    return redirect()->route('finance.liquidated-forms.index');
+                case 'pm':
+                    return redirect()->route('pm.expenditures.index');
+                default:
+                    abort(403, 'Access denied to expense system');
+            }
+        })->middleware('role:admin,finance,pm')->name('dashboard');
+        
+
+    });
+    
+    // API endpoints for AJAX requests
+    Route::prefix('api/expense-system')->name('api.expense-system.')->middleware('role:admin,finance,pm')->group(function () {
+        
+        // Get project expenditures
+        Route::get('/projects/{project}/expenditures', [DailyExpenditureController::class, 'getProjectExpenditures'])
+            ->name('project-expenditures');
+        
+        // Get user expenditure statistics
+        Route::get('/users/{user}/statistics', [DailyExpenditureController::class, 'getUserStatistics'])
+            ->name('user-statistics');
+        
+        // Get expenditure categories for dropdown
+        Route::get('/categories', [DailyExpenditureController::class, 'getCategories'])
+            ->name('categories');
+        
+        // Search expenditures
+        Route::get('/expenditures/search', [DailyExpenditureController::class, 'searchExpenditures'])
+            ->name('search-expenditures');
+        
+        // Get financial report data
+        Route::get('/financial-reports/{report}/data', [FinancialReportController::class, 'getReportData'])
+            ->name('financial-report-data');
+        
+        // Get liquidated form status
+        Route::get('/liquidated-forms/{form}/status', [LiquidatedFormController::class, 'getFormStatus'])
+            ->name('liquidated-form-status');
+        
+        // Receipt validation
+        Route::post('/receipts/validate', [ReceiptController::class, 'validateReceipt'])
+            ->name('validate-receipt');
+    });
+});
+
+// ====================================================================
+// NOTIFICATION ROUTES FOR EXPENSE SYSTEM
+// ====================================================================
+Route::middleware(['auth', 'verified'])->prefix('notifications')->name('notifications.')->group(function () {
+    
+    // Expense-related notifications
+    Route::get('/expenses', function() {
+        $user = auth()->user();
+        $notifications = $user->notifications()
+            ->whereIn('type', [
+                'App\Notifications\ExpenditureSubmitted',
+                'App\Notifications\ExpenditureApproved',
+                'App\Notifications\ExpenditureRejected',
+                'App\Notifications\FinancialReportGenerated',
+                'App\Notifications\LiquidatedFormFlagged',
+                'App\Notifications\LiquidatedFormRevisionRequested',
+                'App\Notifications\LiquidatedFormClarificationRequested',
+                'App\Notifications\ReceiptVerified',
+                'App\Notifications\ReceiptRejected'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+            
+        return view('notifications.expenses', compact('notifications'));
+    })->middleware('role:admin,finance,pm')->name('expenses');
+    
+    Route::post('/expenses/{id}/mark-read', function($id) {
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        
+        return response()->json(['success' => true]);
+    })->middleware('role:admin,finance,pm')->name('expenses.mark-read');
+});
+
 if (app()->environment('local')) {
     Route::get('/test-email', [AuthController::class, 'testEmail'])->name('test.email');
 }
+

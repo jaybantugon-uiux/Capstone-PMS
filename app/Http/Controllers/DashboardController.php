@@ -13,6 +13,8 @@ use App\Models\SitePhoto;
 use App\Models\MonitoredEquipment;
 use App\Models\EquipmentRequest;
 use App\Models\EquipmentMaintenance;
+use App\Models\DailyExpenditure;
+use App\Models\LiquidatedForm;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -360,6 +362,24 @@ public function pmDashboard()
             'created_at' => now()->subHours(5)
         ]
     ]);
+
+            // Expense Liquidation Statistics for PM
+        $expenseLiquidationStats = [
+            'total_expenditures' => DailyExpenditure::where('submitted_by', $user->id)->count(),
+            'draft_expenditures' => DailyExpenditure::where('submitted_by', $user->id)->where('status', 'draft')->count(),
+            'submitted_expenditures' => DailyExpenditure::where('submitted_by', $user->id)->where('status', 'submitted')->count(),
+            'total_amount' => DailyExpenditure::where('submitted_by', $user->id)->sum('amount')
+        ];
+
+        // Liquidated Forms Statistics for PM
+        $liquidatedFormsStats = [
+            'total' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->count(),
+            'pending' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->where('status', 'pending')->count(),
+            'under_review' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->where('status', 'under_review')->count(),
+            'flagged' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->where('status', 'flagged')->count(),
+            'clarification_requested' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->where('status', 'clarification_requested')->count(),
+            'total_amount' => LiquidatedForm::whereIn('project_id', $managedProjectIds)->sum('total_amount')
+        ];
         
     return view('pm.dashboard', compact(
         'myProjects',
@@ -386,6 +406,10 @@ public function pmDashboard()
         'overdueEquipmentMaintenance',
         'equipmentNeedingAttention',
         'projectEquipmentSummary',
+        // NEW: Expense Liquidation Variables
+        'expenseLiquidationStats',
+        // NEW: Liquidated Forms Variables
+        'liquidatedFormsStats',
         // Existing variables
         'teamPerformance',
         'upcomingTasks',

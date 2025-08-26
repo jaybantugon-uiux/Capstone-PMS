@@ -7,6 +7,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h2">Admin Dashboard</h1>
                 <div class="d-flex gap-2">
+                    <a href="{{ route('admin.analytics.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </a>
                     <a href="{{ route('projects.create') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> New Project
                     </a>
@@ -311,6 +314,162 @@
                 </div>
             </div>
 
+            <!-- NEW: Expense Liquidation Subsystem Management Card -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-title text-success mb-2">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Expense Liquidation Subsystem
+                                    </h5>
+                                    <p class="text-muted mb-0">Manage financial reports, liquidated forms, expenditures, and receipts</p>
+                                </div>
+                                <div class="text-success">
+                                    <i class="fas fa-chart-pie fa-3x opacity-75"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Expense Liquidation Statistics -->
+                            <div class="row mb-3">
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-primary mb-1">{{ $liquidatedFormsStats['total'] ?? 0 }}</h5>
+                                        <small class="text-muted">Liquidated Forms</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-info mb-1">{{ $financialReportsStats['total'] ?? 0 }}</h5>
+                                        <small class="text-muted">Financial Reports</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-warning mb-1">{{ $dailyExpendituresStats['total'] ?? 0 }}</h5>
+                                        <small class="text-muted">Daily Expenditures</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-success mb-1">{{ $receiptsStats['total'] ?? 0 }}</h5>
+                                        <small class="text-muted">Receipts</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-danger mb-1">{{ $liquidatedFormsStats['flagged'] ?? 0 }}</h5>
+                                        <small class="text-muted">Flagged Forms</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="bg-light p-3 rounded text-center">
+                                        <h5 class="text-secondary mb-1">₱{{ number_format($liquidatedFormsStats['total_amount'] ?? 0, 2) }}</h5>
+                                        <small class="text-muted">Total Amount</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Alert for Urgent Items -->
+                            @if(($liquidatedFormsStats['flagged'] ?? 0) > 0 || ($liquidatedFormsStats['revision_requested'] ?? 0) > 0 || ($liquidatedFormsStats['clarification_requested'] ?? 0) > 0)
+                                <div class="alert alert-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    @if(($liquidatedFormsStats['flagged'] ?? 0) > 0)
+                                        <strong>{{ $liquidatedFormsStats['flagged'] }}</strong> liquidated forms are flagged for review.
+                                    @endif
+                                    @if(($liquidatedFormsStats['revision_requested'] ?? 0) > 0)
+                                        <strong>{{ $liquidatedFormsStats['revision_requested'] }}</strong> forms need revision.
+                                    @endif
+                                    @if(($liquidatedFormsStats['clarification_requested'] ?? 0) > 0)
+                                        <strong>{{ $liquidatedFormsStats['clarification_requested'] }}</strong> forms need clarification.
+                                    @endif
+                                </div>
+                            @endif
+                            
+                            <div class="d-flex flex-wrap gap-2">
+                                <!-- Liquidated Forms Management -->
+                                <div class="dropdown">
+                                    <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-file-invoice-dollar me-1"></i>Liquidated Forms
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.liquidated-forms.index') }}">
+                                            <i class="fas fa-list me-1"></i>View All Forms
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.liquidated-forms.index', ['status' => 'flagged']) }}">
+                                            <i class="fas fa-flag me-1"></i>Flagged Forms
+                                            @if(($liquidatedFormsStats['flagged'] ?? 0) > 0)
+                                                <span class="badge bg-danger ms-1">{{ $liquidatedFormsStats['flagged'] }}</span>
+                                            @endif
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.liquidated-forms.index', ['status' => 'revision_requested']) }}">
+                                            <i class="fas fa-edit me-1"></i>Revision Requested
+                                            @if(($liquidatedFormsStats['revision_requested'] ?? 0) > 0)
+                                                <span class="badge bg-warning ms-1">{{ $liquidatedFormsStats['revision_requested'] }}</span>
+                                            @endif
+                                        </a></li>
+
+                                    </ul>
+                                </div>
+
+                                <!-- Financial Reports Management -->
+                                <div class="dropdown">
+                                    <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-chart-line me-1"></i>Financial Reports
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.financial-reports.index') }}">
+                                            <i class="fas fa-list me-1"></i>View All Reports
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.financial-reports.index', ['status' => 'draft']) }}">
+                                            <i class="fas fa-edit me-1"></i>Draft Reports
+                                            <span class="badge bg-secondary ms-1">{{ $financialReportsStats['draft'] ?? 0 }}</span>
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.financial-reports.index', ['status' => 'generated']) }}">
+                                            <i class="fas fa-check me-1"></i>Generated Reports
+                                            <span class="badge bg-success ms-1">{{ $financialReportsStats['generated'] ?? 0 }}</span>
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.financial-reports.index', ['status' => 'liquidated']) }}">
+                                            <i class="fas fa-file-invoice me-1"></i>Liquidated Reports
+                                            <span class="badge bg-info ms-1">{{ $financialReportsStats['liquidated'] ?? 0 }}</span>
+                                        </a></li>
+                                    </ul>
+                                </div>
+
+                                <!-- Daily Expenditures Management -->
+                                <div class="dropdown">
+                                    <button class="btn btn-warning btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-receipt me-1"></i>Daily Expenditures
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.expenditures.index') }}">
+                                            <i class="fas fa-list me-1"></i>View All Expenditures
+                                        </a></li>
+
+                                    </ul>
+                                </div>
+
+                                <!-- Receipts Management -->
+                                <div class="dropdown">
+                                    <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-file-upload me-1"></i>Receipts
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ route('admin.receipts.index') }}">
+                                            <i class="fas fa-list me-1"></i>View All Receipts
+                                        </a></li>
+
+                                    </ul>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Site Photos Management Card -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -447,6 +606,175 @@
                 </div>
             </div>
 
+            <!-- NEW: Recent Expense Liquidation Items Section -->
+            <div class="row mb-4">
+                <!-- Recent Liquidated Forms -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Liquidated Forms</h5>
+                            <a href="{{ route('admin.liquidated-forms.index') }}" class="btn btn-sm btn-outline-success">View All</a>
+                        </div>
+                        <div class="card-body">
+                            @if(isset($recentLiquidatedForms) && $recentLiquidatedForms->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($recentLiquidatedForms as $form)
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('admin.liquidated-forms.show', $form) }}" class="text-decoration-none">
+                                                            {{ $form->form_number }}
+                                                        </a>
+                                                    </h6>
+                                                    <p class="mb-1 text-muted small">{{ Str::limit($form->title, 60) }}</p>
+                                                    <small class="text-muted">
+                                                        {{ $form->project->name ?? 'N/A' }} • 
+                                                        {{ $form->preparer->first_name ?? 'N/A' }} {{ $form->preparer->last_name ?? '' }} • 
+                                                        {{ $form->created_at->diffForHumans() }}
+                                                    </small>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-{{ $form->status_color }}">
+                                                        {{ ucfirst(str_replace('_', ' ', $form->status)) }}
+                                                    </span>
+                                                    <br><small class="text-muted">₱{{ number_format($form->total_amount, 2) }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-muted text-center py-3">No recent liquidated forms available</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Financial Reports -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Financial Reports</h5>
+                            <a href="{{ route('admin.financial-reports.index') }}" class="btn btn-sm btn-outline-info">View All</a>
+                        </div>
+                        <div class="card-body">
+                            @if(isset($recentFinancialReports) && $recentFinancialReports->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($recentFinancialReports as $report)
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('admin.financial-reports.show', $report) }}" class="text-decoration-none">
+                                                            {{ Str::limit($report->title, 40) }}
+                                                        </a>
+                                                    </h6>
+                                                    <p class="mb-1 text-muted small">{{ $report->project->name ?? 'N/A' }}</p>
+                                                    <small class="text-muted">
+                                                        {{ $report->creator->first_name ?? 'N/A' }} {{ $report->creator->last_name ?? '' }} • 
+                                                        {{ $report->created_at->diffForHumans() }}
+                                                    </small>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-{{ $report->status_badge_color }}">
+                                                        {{ ucfirst($report->status) }}
+                                                    </span>
+                                                    <br><small class="text-muted">₱{{ number_format($report->total_expenditures, 2) }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-muted text-center py-3">No recent financial reports available</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Daily Expenditures and Receipts -->
+            <div class="row mb-4">
+                <!-- Recent Daily Expenditures -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Daily Expenditures</h5>
+                            <a href="{{ route('admin.expenditures.index') }}" class="btn btn-sm btn-outline-warning">View All</a>
+                        </div>
+                        <div class="card-body">
+                            @if(isset($recentDailyExpenditures) && $recentDailyExpenditures->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($recentDailyExpenditures as $expenditure)
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('admin.expenditures.show', $expenditure) }}" class="text-decoration-none">
+                                                            {{ Str::limit($expenditure->purpose, 50) }}
+                                                        </a>
+                                                    </h6>
+                                                    <p class="mb-1 text-muted small">{{ $expenditure->project->name ?? 'N/A' }}</p>
+                                                    <small class="text-muted">
+                                                        {{ $expenditure->submitter->first_name ?? 'N/A' }} {{ $expenditure->submitter->last_name ?? '' }} • 
+                                                        {{ $expenditure->created_at->diffForHumans() }}
+                                                    </small>
+                                                </div>
+                                                <div class="text-end">
+                                                    <small class="text-muted">₱{{ number_format($expenditure->amount, 2) }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-muted text-center py-3">No recent daily expenditures available</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Receipts -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Recent Receipts</h5>
+                            <a href="{{ route('admin.receipts.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        <div class="card-body">
+                            @if(isset($recentReceipts) && $recentReceipts->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($recentReceipts as $receipt)
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        <a href="{{ route('admin.receipts.show', $receipt) }}" class="text-decoration-none">
+                                                            {{ Str::limit($receipt->original_file_name, 40) }}
+                                                        </a>
+                                                    </h6>
+                                                    <p class="mb-1 text-muted small">{{ $receipt->vendor_name ?? 'N/A' }}</p>
+                                                    <small class="text-muted">
+                                                        {{ $receipt->uploader->first_name ?? 'N/A' }} {{ $receipt->uploader->last_name ?? '' }} • 
+                                                        {{ $receipt->created_at->diffForHumans() }}
+                                                    </small>
+                                                </div>
+                                                <div class="text-end">
+                                                    <small class="text-muted">₱{{ number_format($receipt->amount, 2) }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-muted text-center py-3">No recent receipts available</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Quick Actions -->
             <div class="row mt-4">
                 <div class="col-md-12">
@@ -538,6 +866,31 @@
                                     <a href="{{ route('photos.featured') }}" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                         <i class="fas fa-star fa-2x mb-2"></i>
                                         <span>Featured Photos</span>
+                                    </a>
+                                </div>
+                                <!-- Expense Liquidation Quick Actions -->
+                                <div class="col-md-2">
+                                    <a href="{{ route('admin.liquidated-forms.index') }}" class="btn btn-outline-success w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-file-invoice-dollar fa-2x mb-2"></i>
+                                        <span>Liquidated Forms</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('admin.financial-reports.index') }}" class="btn btn-outline-info w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                        <span>Financial Reports</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('admin.expenditures.index') }}" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                                        <span>Daily Expenditures</span>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('admin.receipts.index') }}" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                        <i class="fas fa-file-upload fa-2x mb-2"></i>
+                                        <span>Receipts</span>
                                     </a>
                                 </div>
                             </div>
