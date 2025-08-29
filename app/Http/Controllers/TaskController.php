@@ -133,7 +133,8 @@ class TaskController extends Controller
         $task->load(['project', 'siteCoordinator']);
         $siteCoordinator = $task->siteCoordinator;
         
-        if ($siteCoordinator) {
+        // Only send notification to site coordinators (exclude clients)
+        if ($siteCoordinator && $siteCoordinator->role !== 'client') {
             try {
                 $siteCoordinator->notify(new TaskCreatedNotification($task));
             } catch (\Exception $e) {
@@ -198,8 +199,8 @@ class TaskController extends Controller
         $oldStatus = $task->status;
         $task->update(['status' => $request->status]);
 
-        // Notify the task creator about status change if status actually changed
-        if ($task->creator && $oldStatus !== $request->status) {
+        // Notify the task creator about status change if status actually changed (exclude clients)
+        if ($task->creator && $task->creator->role !== 'client' && $oldStatus !== $request->status) {
             try {
                 $task->creator->notify(new TaskStatusUpdatedNotification($task, $oldStatus, $request->status, $user));
             } catch (\Exception $e) {
@@ -319,11 +320,11 @@ class TaskController extends Controller
             'status' => $request->status,
         ]);
 
-        // If assigned to different site coordinator, send notification
+        // If assigned to different site coordinator, send notification (exclude clients)
         if ($oldAssignedTo != $request->assigned_to) {
             $task->load(['project', 'siteCoordinator']);
             $siteCoordinator = $task->siteCoordinator;
-            if ($siteCoordinator) {
+            if ($siteCoordinator && $siteCoordinator->role !== 'client') {
                 try {
                     $siteCoordinator->notify(new TaskCreatedNotification($task));
                 } catch (\Exception $e) {

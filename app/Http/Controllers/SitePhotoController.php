@@ -177,17 +177,19 @@ public function index(Request $request)
                 'submitted_at' => now(),
             ]);
             
-            // Notify admins and PMs
+            // Notify admins and PMs (exclude clients)
             $adminsAndPMs = User::where('role', 'admin')
                 ->orWhere('role', 'pm')
                 ->where('status', 'active')
                 ->get();
                 
             foreach ($adminsAndPMs as $admin) {
-                try {
-                    $admin->notify(new SitePhotoSubmitted($sitePhoto));
-                } catch (\Exception $e) {
-                    Log::warning('Failed to send notification: ' . $e->getMessage());
+                if ($admin->role !== 'client') {
+                    try {
+                        $admin->notify(new SitePhotoSubmitted($sitePhoto));
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to send notification: ' . $e->getMessage());
+                    }
                 }
             }
             
@@ -346,17 +348,19 @@ public function index(Request $request)
             
             $sitePhoto->update($updateData);
             
-            // Notify admins and PMs
+            // Notify admins and PMs (exclude clients)
             $adminsAndPMs = User::where('role', 'admin')
                 ->orWhere('role', 'pm')
                 ->where('status', 'active')
                 ->get();
                 
             foreach ($adminsAndPMs as $admin) {
-                try {
-                    $admin->notify(new SitePhotoSubmitted($sitePhoto));
-                } catch (\Exception $e) {
-                    Log::warning('Failed to send notification: ' . $e->getMessage());
+                if ($admin->role !== 'client') {
+                    try {
+                        $admin->notify(new SitePhotoSubmitted($sitePhoto));
+                    } catch (\Exception $e) {
+                        Log::warning('Failed to send notification: ' . $e->getMessage());
+                    }
                 }
             }
             
@@ -607,11 +611,13 @@ public function index(Request $request)
                 'rejection_reason' => null,
             ]);
             
-            // Notify uploader
-            try {
-                $sitePhoto->uploader->notify(new \App\Notifications\SitePhotoApproved($sitePhoto, $user->first_name . ' ' . $user->last_name));
-            } catch (\Exception $e) {
-                Log::warning('Failed to send approval notification: ' . $e->getMessage());
+            // Notify uploader (exclude clients)
+            if ($sitePhoto->uploader && $sitePhoto->uploader->role !== 'client') {
+                try {
+                    $sitePhoto->uploader->notify(new \App\Notifications\SitePhotoApproved($sitePhoto, $user->first_name . ' ' . $user->last_name));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to send approval notification: ' . $e->getMessage());
+                }
             }
             $message = 'Photo approved successfully.';
             
@@ -626,11 +632,13 @@ public function index(Request $request)
                 'is_public' => false,
             ]);
             
-            // Notify uploader
-            try {
-                $sitePhoto->uploader->notify(new \App\Notifications\SitePhotoRejected($sitePhoto, $user->first_name . ' ' . $user->last_name));
-            } catch (\Exception $e) {
-                Log::warning('Failed to send rejection notification: ' . $e->getMessage());
+            // Notify uploader (exclude clients)
+            if ($sitePhoto->uploader && $sitePhoto->uploader->role !== 'client') {
+                try {
+                    $sitePhoto->uploader->notify(new \App\Notifications\SitePhotoRejected($sitePhoto, $user->first_name . ' ' . $user->last_name));
+                } catch (\Exception $e) {
+                    Log::warning('Failed to send rejection notification: ' . $e->getMessage());
+                }
             }
             $message = 'Photo rejected successfully.';
         }
@@ -670,8 +678,8 @@ public function index(Request $request)
         'is_internal' => $request->boolean('is_internal'),
     ]);
     
-    // Notify uploader if external comment
-    if (!$request->boolean('is_internal') && $user->id !== $sitePhoto->user_id) {
+    // Notify uploader if external comment (exclude clients)
+    if (!$request->boolean('is_internal') && $user->id !== $sitePhoto->user_id && $sitePhoto->uploader && $sitePhoto->uploader->role !== 'client') {
         try {
             $sitePhoto->uploader->notify(new \App\Notifications\SitePhotoCommentAdded($sitePhoto, $comment, !$request->boolean('is_internal')));
         } catch (\Exception $e) {
@@ -730,10 +738,12 @@ public function index(Request $request)
                             'reviewed_by' => $user->id,
                             'reviewed_at' => now(),
                         ]);
-                        try {
-                            $photo->uploader->notify(new \App\Notifications\SitePhotoApproved($photo, $user->first_name . ' ' . $user->last_name));
-                        } catch (\Exception $e) {
-                            Log::warning('Failed to send bulk approval notification: ' . $e->getMessage());
+                        if ($photo->uploader && $photo->uploader->role !== 'client') {
+                            try {
+                                $photo->uploader->notify(new \App\Notifications\SitePhotoApproved($photo, $user->first_name . ' ' . $user->last_name));
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to send bulk approval notification: ' . $e->getMessage());
+                            }
                         }
                         $processedCount++;
                     }
@@ -747,10 +757,12 @@ public function index(Request $request)
                             'reviewed_at' => now(),
                             'rejection_reason' => $request->bulk_rejection_reason,
                         ]);
-                        try {
-                            $photo->uploader->notify(new \App\Notifications\SitePhotoRejected($photo, $user->first_name . ' ' . $user->last_name));
-                        } catch (\Exception $e) {
-                            Log::warning('Failed to send bulk rejection notification: ' . $e->getMessage());
+                        if ($photo->uploader && $photo->uploader->role !== 'client') {
+                            try {
+                                $photo->uploader->notify(new \App\Notifications\SitePhotoRejected($photo, $user->first_name . ' ' . $user->last_name));
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to send bulk rejection notification: ' . $e->getMessage());
+                            }
                         }
                         $processedCount++;
                     }

@@ -952,16 +952,18 @@ public function adminStoreMaintenance(Request $request)
                         ->get();
                     
                     foreach ($admins as $admin) {
-                        try {
-                            if (class_exists('\App\Notifications\EquipmentRequestSubmitted')) {
-                                $admin->notify(new \App\Notifications\EquipmentRequestSubmitted($equipmentRequest));
+                        if ($admin->role !== 'client') {
+                            try {
+                                if (class_exists('\App\Notifications\EquipmentRequestSubmitted')) {
+                                    $admin->notify(new \App\Notifications\EquipmentRequestSubmitted($equipmentRequest));
+                                }
+                            } catch (\Exception $e) {
+                                Log::warning('Failed to send notification to admin', [
+                                    'admin_id' => $admin->id,
+                                    'request_id' => $equipmentRequest->id,
+                                    'error' => $e->getMessage()
+                                ]);
                             }
-                        } catch (\Exception $e) {
-                            Log::warning('Failed to send notification to admin', [
-                                'admin_id' => $admin->id,
-                                'request_id' => $equipmentRequest->id,
-                                'error' => $e->getMessage()
-                            ]);
                         }
                     }
                 } catch (\Exception $e) {

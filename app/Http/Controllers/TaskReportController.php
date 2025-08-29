@@ -187,7 +187,7 @@ class TaskReportController extends Controller
                 'updated_at' => now(),
             ]);
 
-            // UPDATED: Send notifications to admins AND project managers
+            // UPDATED: Send notifications to admins AND project managers (exclude clients)
             $notifiableUsers = User::where(function($query) use ($task) {
                 $query->where('role', 'admin')
                       ->orWhere(function($q) use ($task) {
@@ -205,7 +205,7 @@ class TaskReportController extends Controller
                                         });
                             });
                       });
-            })->where('status', 'active')->get();
+            })->where('status', 'active')->where('role', '!=', 'client')->get();
 
             // Also include all PMs if no specific PM relationship found
             if ($notifiableUsers->where('role', 'pm')->isEmpty()) {
@@ -578,23 +578,25 @@ class TaskReportController extends Controller
                 'admin_rating' => $request->admin_rating,
             ]);
 
-            // Send notification to the site coordinator
-            try {
-                $taskReport->user->notify(new TaskReportReviewed($taskReport));
-                Log::info('Task report review notification sent', [
-                    'reviewer_id' => $user->id,
-                    'reviewer_role' => $user->role,
-                    'task_report_id' => $taskReport->id,
-                    'review_status' => $request->review_status
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to send task report review notification', [
-                    'task_report_id' => $taskReport->id,
-                    'user_id' => $taskReport->user_id,
-                    'reviewer_id' => $user->id,
-                    'reviewer_role' => $user->role,
-                    'error' => $e->getMessage()
-                ]);
+            // Send notification to the site coordinator (exclude clients)
+            if ($taskReport->user && $taskReport->user->role !== 'client') {
+                try {
+                    $taskReport->user->notify(new TaskReportReviewed($taskReport));
+                    Log::info('Task report review notification sent', [
+                        'reviewer_id' => $user->id,
+                        'reviewer_role' => $user->role,
+                        'task_report_id' => $taskReport->id,
+                        'review_status' => $request->review_status
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send task report review notification', [
+                        'task_report_id' => $taskReport->id,
+                        'user_id' => $taskReport->user_id,
+                        'reviewer_id' => $user->id,
+                        'reviewer_role' => $user->role,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             $statusMessage = match($request->review_status) {
@@ -1045,17 +1047,19 @@ class TaskReportController extends Controller
                     'admin_rating' => $request->admin_rating,
                 ]);
 
-                // Send notification to the site coordinator
-                try {
-                    $report->user->notify(new TaskReportReviewed($report));
-                } catch (\Exception $e) {
-                    Log::error('Failed to send bulk approval notification', [
-                        'task_report_id' => $report->id,
-                        'user_id' => $report->user_id,
-                        'reviewer_id' => $user->id,
-                        'reviewer_role' => $user->role,
-                        'error' => $e->getMessage()
-                    ]);
+                // Send notification to the site coordinator (exclude clients)
+                if ($report->user && $report->user->role !== 'client') {
+                    try {
+                        $report->user->notify(new TaskReportReviewed($report));
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send bulk approval notification', [
+                            'task_report_id' => $report->id,
+                            'user_id' => $report->user_id,
+                            'reviewer_id' => $user->id,
+                            'reviewer_role' => $user->role,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 }
             }
 
@@ -1314,8 +1318,10 @@ class TaskReportController extends Controller
                 'admin_rating' => $request->rating,
             ]);
 
-            // Send notification
-            $taskReport->user->notify(new TaskReportReviewed($taskReport));
+            // Send notification (exclude clients)
+            if ($taskReport->user && $taskReport->user->role !== 'client') {
+                $taskReport->user->notify(new TaskReportReviewed($taskReport));
+            }
 
             return response()->json([
                 'success' => true,

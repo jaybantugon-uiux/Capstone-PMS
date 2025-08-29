@@ -14,12 +14,13 @@ use App\Http\Controllers\SiteIssueController;
 use App\Http\Controllers\SitePhotoController;
 use App\Http\Controllers\ProgressReportController;
 use App\Http\Controllers\ClientProjectController; 
-use App\Http\Controllers\ClientNotificationPreferencesController; 
+ 
 use App\Http\Controllers\EquipmentMonitoringController;
 use App\Http\Controllers\DailyExpenditureController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\LiquidatedFormController; 
+use App\Http\Controllers\NotificationController;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -713,19 +714,7 @@ Route::get('/sc-dashboard', function() {
             Route::get('/{project}/updates', [ClientProjectController::class, 'getUpdates'])->name('updates');
         });
         
-        // Notification preferences for clients
-        Route::prefix('notification-preferences')->name('notification-preferences.')->group(function () {
-            Route::get('/', [ClientNotificationPreferencesController::class, 'index'])->name('index');
-            Route::post('/global', [ClientNotificationPreferencesController::class, 'updateGlobal'])->name('update-global');
-            Route::post('/project', [ClientNotificationPreferencesController::class, 'createProjectPreferences'])->name('create-project');
-            Route::put('/{preferences}', [ClientNotificationPreferencesController::class, 'updateProject'])->name('update-project');
-            Route::delete('/{preferences}', [ClientNotificationPreferencesController::class, 'deleteProject'])->name('delete-project');
-            Route::post('/bulk-update', [ClientNotificationPreferencesController::class, 'bulkUpdate'])->name('bulk-update');
-            Route::get('/export', [ClientNotificationPreferencesController::class, 'export'])->name('export');
-            
-            // AJAX endpoints
-            Route::get('/api/statistics', [ClientNotificationPreferencesController::class, 'getStatistics'])->name('api.statistics');
-        });
+
     });
 
     Route::prefix('tasks')->name('tasks.')->group(function () {
@@ -2397,6 +2386,29 @@ Route::middleware(['auth', 'verified', 'role:pm,admin'])->prefix('pm')->name('pm
         
         // Statistics
         Route::get('/stats', [DailyExpenditureController::class, 'stats'])->name('stats');
+    });
+
+    // ====================================================================
+    // PM LIQUIDATED FORMS ROUTES
+    // ====================================================================
+    Route::prefix('liquidated-forms')->name('liquidated-forms.')->group(function () {
+        Route::get('/', [LiquidatedFormController::class, 'pmIndex'])->name('index');
+        Route::get('/{liquidatedForm}', [LiquidatedFormController::class, 'pmShow'])->name('show');
+    });
+
+    // ====================================================================
+    // PM FINANCIAL REPORTS ROUTES
+    // ====================================================================
+    Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
+        Route::get('/{financialReport}', [FinancialReportController::class, 'pmShow'])->name('show');
+    });
+
+    // ====================================================================
+    // PM RECEIPTS ROUTES
+    // ====================================================================
+    Route::prefix('receipts')->name('receipts.')->group(function () {
+        Route::get('/{receipt}', [ReceiptController::class, 'pmShow'])->name('show');
+        Route::get('/{receipt}/download', [ReceiptController::class, 'download'])->name('download');
     });
 });
 

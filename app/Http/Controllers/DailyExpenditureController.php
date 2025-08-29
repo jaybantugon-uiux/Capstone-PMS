@@ -151,18 +151,20 @@ class DailyExpenditureController extends Controller
                 ->get();
             
             foreach ($financeAndAdminUsers as $recipient) {
-                $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
-                    'expenditure_submitted',
-                    [
-                        'expenditure_id' => $expenditure->id,
-                        'submitter_name' => $user->full_name,
-                        'amount' => $expenditure->amount,
-                        'category' => $expenditure->category,
-                        'expense_date' => $expenditure->expense_date,
-                        'project_name' => $expenditure->project ? $expenditure->project->name : 'No Project',
-                        'action_url' => route('finance.expenditures.show', $expenditure->id)
-                    ]
-                ));
+                if ($recipient->role !== 'client') {
+                    $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
+                        'expenditure_submitted',
+                        [
+                            'expenditure_id' => $expenditure->id,
+                            'submitter_name' => $user->full_name,
+                            'amount' => $expenditure->amount,
+                            'category' => $expenditure->category,
+                            'expense_date' => $expenditure->expense_date,
+                            'project_name' => $expenditure->project ? $expenditure->project->name : 'No Project',
+                            'action_url' => route('finance.expenditures.show', $expenditure->id)
+                        ]
+                    ));
+                }
             }
         }
 
@@ -294,18 +296,20 @@ class DailyExpenditureController extends Controller
             ->get();
         
         foreach ($financeAndAdminUsers as $recipient) {
-            $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
-                'expenditure_submitted',
-                [
-                    'expenditure_id' => $expenditure->id,
-                    'submitter_name' => $user->full_name,
-                    'amount' => $expenditure->amount,
-                    'category' => $expenditure->category,
-                    'expense_date' => $expenditure->expense_date,
-                    'project_name' => $expenditure->project ? $expenditure->project->name : 'No Project',
-                    'action_url' => route('finance.expenditures.show', $expenditure->id)
-                ]
-            ));
+            if ($recipient->role !== 'client') {
+                $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
+                    'expenditure_submitted',
+                    [
+                        'expenditure_id' => $expenditure->id,
+                        'submitter_name' => $user->full_name,
+                        'amount' => $expenditure->amount,
+                        'category' => $expenditure->category,
+                        'expense_date' => $expenditure->expense_date,
+                        'project_name' => $expenditure->project ? $expenditure->project->name : 'No Project',
+                        'action_url' => route('finance.expenditures.show', $expenditure->id)
+                    ]
+                ));
+            }
         }
 
         if (request()->expectsJson()) {
@@ -356,15 +360,17 @@ class DailyExpenditureController extends Controller
                 ->get();
             
             foreach ($financeAndAdminUsers as $recipient) {
-                $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
-                    'bulk_expenditure_submitted',
-                    [
-                        'submitter_name' => $user->full_name,
-                        'submitted_count' => $submitted,
-                        'total_amount' => $submittedExpenditures->sum('amount'),
-                        'action_url' => route('finance.expenditures.index')
-                    ]
-                ));
+                if ($recipient->role !== 'client') {
+                    $recipient->notify(new \App\Notifications\ExpenseLiquidationNotification(
+                        'bulk_expenditure_submitted',
+                        [
+                            'submitter_name' => $user->full_name,
+                            'submitted_count' => $submitted,
+                            'total_amount' => $submittedExpenditures->sum('amount'),
+                            'action_url' => route('finance.expenditures.index')
+                        ]
+                    ));
+                }
             }
         }
 

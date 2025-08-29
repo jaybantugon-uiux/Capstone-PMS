@@ -449,12 +449,14 @@ class SiteIssueController extends Controller
                   });
         })->get();
 
-        // Send notifications to each eligible user
+        // Send notifications to each eligible user (exclude clients)
         foreach ($usersToNotify as $user) {
-            try {
-                $user->notify(new SiteIssueReported($siteIssue));
-            } catch (\Exception $e) {
-                Log::error('Failed to send site issue notification to user ' . $user->id . ': ' . $e->getMessage());
+            if ($user->role !== 'client') {
+                try {
+                    $user->notify(new SiteIssueReported($siteIssue));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send site issue notification to user ' . $user->id . ': ' . $e->getMessage());
+                }
             }
         }
     }
@@ -464,7 +466,7 @@ class SiteIssueController extends Controller
      */
     private function notifyReporterOfUpdate(SiteIssue $siteIssue)
     {
-        if ($siteIssue->reporter) {
+        if ($siteIssue->reporter && $siteIssue->reporter->role !== 'client') {
             try {
                 $siteIssue->reporter->notify(new SiteIssueUpdated($siteIssue));
             } catch (\Exception $e) {
@@ -727,9 +729,9 @@ class SiteIssueController extends Controller
                         'acknowledged_by' => $issue->acknowledged_by ?: $user->id,
                     ]);
                     
-                    // Notify assigned user
+                    // Notify assigned user (exclude clients)
                     $assignedUser = User::find($request->assigned_to);
-                    if ($assignedUser) {
+                    if ($assignedUser && $assignedUser->role !== 'client') {
                         $assignedUser->notify(new SiteIssueAssigned($issue));
                     }
                 }
@@ -763,8 +765,8 @@ class SiteIssueController extends Controller
                     
                     $issue->update($updateData);
                     
-                    // Notify reporter of status change
-                    if ($issue->reporter) {
+                    // Notify reporter of status change (exclude clients)
+                    if ($issue->reporter && $issue->reporter->role !== 'client') {
                         $issue->reporter->notify(new SiteIssueUpdated($issue));
                     }
                 }

@@ -257,14 +257,12 @@
                             <li><i class="fas fa-file-alt text-primary me-2"></i>Progress reports from your team</li>
                             <li><i class="fas fa-images text-success me-2"></i>Public project photos</li>
                             <li><i class="fas fa-eye text-info me-2"></i>Project status and information</li>
-                            <li><i class="fas fa-bell text-warning me-2"></i>Important announcements</li>
                         </ul>
                     </div>
                     
                     <div class="alert alert-info small mb-0">
                         <i class="fas fa-lightbulb me-2"></i>
-                        <strong>Note:</strong> Project updates and task notifications are managed internally by your project team. 
-                        You'll receive progress reports with summaries of important developments.
+                        <strong>Note:</strong> You will only receive progress report notifications. All other project updates and task notifications are managed internally by your project team.
                     </div>
                 </div>
             </div>

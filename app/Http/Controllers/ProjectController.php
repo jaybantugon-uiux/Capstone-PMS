@@ -150,20 +150,23 @@ class ProjectController extends Controller
         if ($siteCoordinators->count() > 0) {
             try {
                 foreach ($siteCoordinators as $coordinator) {
-                    Log::info('Sending project notification to coordinator', [
-                        'project_id' => $project->id,
-                        'coordinator_id' => $coordinator->id,
-                        'coordinator_name' => $coordinator->full_name,
-                        'coordinator_email' => $coordinator->email
-                    ]);
-                    
-                    $coordinator->notify(new ProjectCreatedNotification($project));
-                    
-                    $notificationResults[] = [
-                        'coordinator_id' => $coordinator->id,
-                        'coordinator_email' => $coordinator->email,
-                        'status' => 'sent'
-                    ];
+                    // Only send notification to site coordinators (exclude clients)
+                    if ($coordinator->role !== 'client') {
+                        Log::info('Sending project notification to coordinator', [
+                            'project_id' => $project->id,
+                            'coordinator_id' => $coordinator->id,
+                            'coordinator_name' => $coordinator->full_name,
+                            'coordinator_email' => $coordinator->email
+                        ]);
+                        
+                        $coordinator->notify(new ProjectCreatedNotification($project));
+                        
+                        $notificationResults[] = [
+                            'coordinator_id' => $coordinator->id,
+                            'coordinator_email' => $coordinator->email,
+                            'status' => 'sent'
+                        ];
+                    }
                 }
                 
                 Log::info('All project notifications sent successfully', [

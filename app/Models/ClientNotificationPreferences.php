@@ -16,26 +16,10 @@ class ClientNotificationPreferences extends Model
         'project_id',
         'progress_reports_email',
         'progress_reports_app',
-        'project_updates_email',
-        'project_updates_app',
-        'task_completion_email',
-        'task_completion_app',
-        'milestone_email',
-        'milestone_app',
-        'issue_notifications_email',
-        'issue_notifications_app',
-        'photo_upload_email',
-        'photo_upload_app',
-        'general_announcements_email',
-        'general_announcements_app',
-        'marketing_email',
         'digest_frequency',
         'quiet_hours_start',
         'quiet_hours_end',
         'timezone',
-        'site_issue_notifications_email',
-        'site_issue_notifications_app',
-        'site_issue_email_preferences',
     ];
 
     protected $casts = [
@@ -138,23 +122,9 @@ class ClientNotificationPreferences extends Model
         switch ($user->role) {
             case 'client':
                 return array_merge($defaults, [
-                    // Clients receive ONLY progress reports and announcements
+                    // Clients receive ONLY progress report notifications
                     'progress_reports_email' => true,
                     'progress_reports_app' => true,
-                    'project_updates_email' => false, // DISABLED for clients
-                    'project_updates_app' => false,   // DISABLED for clients
-                    'task_completion_email' => false, // DISABLED for clients
-                    'task_completion_app' => false,   // DISABLED for clients
-                    'milestone_email' => true,
-                    'milestone_app' => true,
-                    'issue_notifications_email' => false, // DISABLED for clients
-                    'issue_notifications_app' => false,   // DISABLED for clients
-                    'photo_upload_email' => false,        // DISABLED for clients
-                    'photo_upload_app' => false,           // DISABLED for clients (they can view public photos)
-                    'general_announcements_email' => true,
-                    'general_announcements_app' => true,
-                    'site_issue_notifications_email' => false, // DISABLED for clients
-                    'site_issue_notifications_app' => false,   // DISABLED for clients
                 ]);
 
             case 'admin':
@@ -353,16 +323,15 @@ class ClientNotificationPreferences extends Model
             return false;
         }
 
-        // ENFORCE CLIENT RESTRICTIONS: Clients cannot receive project/task notifications
+        // ENFORCE CLIENT RESTRICTIONS: Clients can ONLY receive progress report notifications
         if ($user->role === 'client') {
-            $allowedNotifications = ['progress_reports', 'milestones', 'announcements', 'marketing'];
-            $baseType = explode('_', $notificationType)[0];
+            $allowedNotifications = ['progress_reports'];
             
-            if (!in_array($baseType, $allowedNotifications) && !in_array($notificationType, $allowedNotifications)) {
+            if (!in_array($notificationType, $allowedNotifications)) {
                 Log::debug('Client notification blocked', [
                     'user_id' => $user->id,
                     'notification_type' => $notificationType,
-                    'reason' => 'clients_excluded_from_project_task_notifications'
+                    'reason' => 'clients_can_only_receive_progress_report_notifications'
                 ]);
                 return false;
             }
@@ -389,12 +358,9 @@ class ClientNotificationPreferences extends Model
         // Role-specific notification mapping
         switch ($userRole) {
             case 'client':
-                // CLIENTS CAN ONLY RECEIVE THESE NOTIFICATION TYPES
+                // CLIENTS CAN ONLY RECEIVE PROGRESS REPORT NOTIFICATIONS
                 return match ($notificationType) {
                     'progress_reports' => 'progress_reports' . $suffix,
-                    'milestones', 'milestone' => 'milestone' . $suffix,
-                    'announcements', 'general_announcements' => 'general_announcements' . $suffix,
-                    'marketing' => $channel === 'email' ? 'marketing_email' : null,
                     default => null, // All other notifications are blocked for clients
                 };
 
@@ -466,18 +432,13 @@ class ClientNotificationPreferences extends Model
 
         // Count enabled notifications based on user role
         if ($user->role === 'client') {
-            // UPDATED: Only count allowed notification types for clients
+            // UPDATED: Only count progress report notifications for clients
             $clientEmailFields = [
-                'progress_reports_email',
-                'milestone_email', 
-                'general_announcements_email',
-                'marketing_email'
+                'progress_reports_email'
             ];
             
             $clientAppFields = [
-                'progress_reports_app',
-                'milestone_app',
-                'general_announcements_app'
+                'progress_reports_app'
             ];
 
             $summary['email_enabled_count'] = collect($clientEmailFields)->sum(fn($field) => $this->$field ? 1 : 0);
@@ -485,17 +446,17 @@ class ClientNotificationPreferences extends Model
             
             $summary['enabled_notifications'] = [
                 'Progress Reports' => $this->progress_reports_email || $this->progress_reports_app,
-                'Milestones' => $this->milestone_email || $this->milestone_app,
-                'Announcements' => $this->general_announcements_email || $this->general_announcements_app,
-                'Marketing' => $this->marketing_email,
             ];
             
             // UPDATED: Add restriction notice for clients
             $summary['restrictions'] = [
-                'project_updates' => 'Disabled - Clients do not receive project updates',
-                'task_notifications' => 'Disabled - Clients do not receive task notifications',
-                'site_issues' => 'Disabled - Clients do not receive site issue notifications',
-                'site_photos' => 'Disabled - Clients do not receive photo review notifications',
+                'project_updates' => 'Disabled - Clients only receive progress report notifications',
+                'task_notifications' => 'Disabled - Clients only receive progress report notifications',
+                'site_issues' => 'Disabled - Clients only receive progress report notifications',
+                'site_photos' => 'Disabled - Clients only receive progress report notifications',
+                'milestones' => 'Disabled - Clients only receive progress report notifications',
+                'announcements' => 'Disabled - Clients only receive progress report notifications',
+                'marketing' => 'Disabled - Clients only receive progress report notifications',
                 'note' => 'Clients can view public photos and project information through the dashboard'
             ];
 
